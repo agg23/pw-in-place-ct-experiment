@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <script type="module">
+    import { createRoot } from 'react-dom/client';
+
+    window.__PW_CT_MOUNT__ = (component) => {
+      console.log('Mounting', component);
+      createRoot(document.getElementById('ct-root')).render(component);
+      console.log('Mounted');
+    };
+    // (async () => {
+    //   const { createRoot } = await import('/node_modules/react-dom/client');
+    //   // Custom per framework
+    //   window.__PW_CT_MOUNT__ = (component) => createRoot(document.getElementById('ct-root')).render(component);
+    // })();
+  </script>
+  <!-- <script type="module" src="/src/custom.tsx"></script> -->
+  <body>
+    <div id="ct-root">
+      <div>Existing</div>
+    </div>
+    <!-- <script type="module" src="/src/main.tsx"></script> -->
+  </body>
+</html>
