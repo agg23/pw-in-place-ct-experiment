@@ -1,12 +1,13 @@
 import { expect } from '@playwright/test';
 import { test } from './pwInternals.ts';
+import type { Counter } from './Counter.tsx';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://localhost:5173/');
 });
 
 test('render', async ({ page, mount }) => {
-  await mount('/src/components/Counter', ({ Counter }) => <Counter />);
+  await mount<{ Counter: typeof Counter} >('/src/components/Counter', ({ Counter }) => <Counter />);
 
   await expect(page.locator('[data-testid="count"]')).toHaveText('0');
 });
