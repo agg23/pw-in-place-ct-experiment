@@ -5,12 +5,6 @@ import type { Binding } from "@babel/traverse";
 import * as pathApi from "path";
 import { Dependency, getLambdaDependencies } from "./util.js";
 
-// interface ImportRegistryItem {
-//   importNode: t.ImportDeclaration;
-// }
-
-// let importInfos: Map<string, ImportInfo>;
-// let importDeclarations: Map<string, t.ImportDeclaration>;
 let importBindings: Map<Binding, NodePath<t.ImportDeclaration>>;
 let mountDependencies: Map<
   NodePath<t.ArrowFunctionExpression>,
@@ -26,18 +20,7 @@ export default declare((api) => {
   return {
     name: "playwright-component-mount-transform",
     visitor: {
-      // enter(path, state) {
-      // enter() {
-      //   // importInfos = new Map();
-      //   importDeclarations = new Map();
-      // },
       Program: {
-        // Program(path) {
-        // for (const node of path.node.body) {
-        //   if (t.isImportDeclaration(node)) {
-        //     for (const specifier )
-        //   }
-        // }
         exit(path, state) {
           if (!state.filename) {
             throw new Error("No filename provided");
@@ -120,7 +103,6 @@ export default declare((api) => {
           }
 
           // Rewrite mount functions
-          // TODO: Must destructure args and write imports map
           for (const [
             mountLambda,
             dependencies,
@@ -177,35 +159,6 @@ export default declare((api) => {
             );
 
             mountLambda.node.params = [t.objectPattern(properties)];
-
-            // const importsMap = t.objectExpression(
-            //   Object.entries(dependencies).map(([identifier, dependency]) => {
-            //     const importType = t.stringLiteral(dependency.importType);
-            //     const importPath = t.stringLiteral(
-            //       dependency.path.node.source.value,
-            //     );
-
-            //     return t.objectProperty(
-            //       t.identifier(identifier),
-            //       t.objectExpression([
-            //         t.objectProperty(t.identifier("importType"), importType),
-            //         t.objectProperty(t.identifier("importPath"), importPath),
-            //       ]),
-            //     );
-            //   }),
-            // );
-
-            // mountLambdaParams.push(t.identifier("imports"));
-
-            // const importsArg = t.objectExpression([
-            //   t.objectProperty(t.identifier("imports"), importsMap),
-            // ]);
-
-            // mountLambdaNode.body = t.blockStatement([
-            //   t.returnStatement(
-            //     t.callExpression(mountLambdaNode.body, [importsArg]),
-            //   ),
-            // ]);
           }
         },
       },
@@ -310,11 +263,7 @@ export default declare((api) => {
             );
             console.log(dependencies);
 
-            // mountLambda.params.push(
-            //   ...Object.keys(dependencies).map(t.identifier),
-            // );
             mountDependencies.set(mountLambdaPath, dependencies);
-            // TODO now: Remove imports and record imports to inject into browser context
           },
         });
       },

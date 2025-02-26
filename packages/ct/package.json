@@ -1,5 +1,5 @@
 {
-  "name": "pw-ct-babel",
+  "name": "pw-ct",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
@@ -10,14 +10,11 @@
     "build": "rm -Rf dist && tsc -b"
   },
   "devDependencies": {
-    "@babel/types": "^7.26.9",
-    "@types/babel__core": "^7.20.5",
-    "@types/babel__helper-plugin-utils": "^7.10.3",
     "@types/node": "^22.13.5",
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@babel/core": "^7.26.9",
-    "@babel/helper-plugin-utils": "^7.26.5"
+    "@playwright/test": "^1.50.1",
+    "pw-ct-babel": "*"
   }
 }

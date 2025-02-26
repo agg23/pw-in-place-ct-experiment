@@ -1,11 +1,13 @@
 {
   "name": "pw-in-place-ct-experiment",
   "version": "1.0.0",
+  "type": "module",
   "workspaces": [
     "packages/*",
     "test-projects/*"
   ],
   "scripts": {
+    "build": "npm run build --workspaces"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1"

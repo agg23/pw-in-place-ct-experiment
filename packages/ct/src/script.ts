@@ -1,20 +1,9 @@
-import { test as base, Page } from '@playwright/test';
-import * as fs from 'fs';
+import { Page } from '@playwright/test';
 import * as path from 'path';
+import * as fs from 'fs';
+import type { DedupedImport, Dependency } from './types';
 
-interface Dependency {
-  url: string;
-  type: 'named' | 'default' | 'namespace';
-}
-
-interface DedupedImport {
-  // TODO: Support renaming
-  named: string[];
-  default?: string;
-  namespace?: string;
-}
-
-const buildUserContentScript = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string, tempFilePath: string) => {
+export const buildUserContentScript = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string, tempFilePath: string) => {
   const dedupedImports = new Map<string, DedupedImport>();
 
   for (const [variableName, dependency] of Object.entries(imports)) {
@@ -43,7 +32,7 @@ const buildUserContentScript = async (componentBuilder: () => object, imports: R
       importPath = path.resolve(workingDir, importPath);
     }
 
-    const importExpressions = [];
+    const importExpressions: string[] = [];
     if (importData.namespace) {
       importExpressions.push(`import * as ${importData.namespace} from '${importPath}';`);
     }
@@ -86,36 +75,7 @@ const buildUserContentScript = async (componentBuilder: () => object, imports: R
   await new Promise(resolve => setTimeout(resolve, 500));
 }
 
-const evaluateTransformedScript = (page: Page, tempFilePath: string) => page.evaluate(async ({ scriptPath }) => {
+export const evaluateTransformedScript = (page: Page, tempFilePath: string) => page.evaluate(async ({ scriptPath }) => {
   const userContentScript = await import(scriptPath);
   await userContentScript.default();
 }, { scriptPath: tempFilePath });
-
-export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void> }>({
-  mount: async ({ page }, use) => {
-    const mountFixture = async () => {
-      throw new Error('Attempted to call `mount` directly. This should be transformed by the Babel plugin');
-    };
-
-    // TODO: Build this based on Playwright config directory
-    const rootProjectDir = path.resolve(import.meta.dirname, '../..');
-    console.log('rootProjectDir', rootProjectDir);
-
-    mountFixture._mountInternal = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string) => {
-      const scriptWorkingRelativeDir = path.relative(rootProjectDir, workingDir);
-      const tempFilePath = path.resolve(workingDir, '.tmp.tsx');
-      console.log('scriptWorkingRelativeDir', scriptWorkingRelativeDir, tempFilePath);
-      await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir, tempFilePath);
-
-      let tempEvalPath = path.join(scriptWorkingRelativeDir, '.tmp.tsx');
-      if (!tempEvalPath.startsWith(path.sep)) {
-        tempEvalPath = `${path.sep}${tempEvalPath}`;
-      }
-
-      await evaluateTransformedScript(page, tempEvalPath);
-    };
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return use(mountFixture);
-  }
-});
