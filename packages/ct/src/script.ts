@@ -64,7 +64,8 @@ export const buildUserContentScript = async (componentBuilder: () => object, imp
   // This could also be configured per platform, removing the need for `__PW_CT_MOUNT__` to be global
   const userContentScript = `
   import { jsx as _jsx } from 'react/jsx-runtime';
-  ${importExpressions};
+  import * as _jsxRuntime from 'playwright/jsx-runtime';
+  ${importExpressions}
   export default () => {
     const component = (${componentBuilder.toString()})({${importArguments}});
     window.__PW_CT_MOUNT__(component);
@@ -75,7 +76,8 @@ export const buildUserContentScript = async (componentBuilder: () => object, imp
   await new Promise(resolve => setTimeout(resolve, 500));
 }
 
-export const evaluateTransformedScript = (page: Page, tempFilePath: string) => page.evaluate(async ({ scriptPath }) => {
-  const userContentScript = await import(scriptPath);
-  await userContentScript.default();
-}, { scriptPath: tempFilePath });
+export const evaluateTransformedScript = (page: Page, tempFilePath: string) => page.evaluate(
+  // When not declared as a template string this can be transpiled
+  ({ scriptPath }) => eval(`debugger; import('${scriptPath}').then(module => module.default())`),
+  { scriptPath: tempFilePath }
+);

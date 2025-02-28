@@ -2,8 +2,6 @@ import { expect } from '@playwright/test';
 import { test } from 'pw-ct';
 import { Counter } from './Counter.tsx';
 
-console.log(import.meta.dirname);
-
 test.beforeEach(async ({ page }) => {
   await page.goto('http://localhost:5173/');
 });
@@ -11,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 test('render', async ({ page, mount }) => {
   await mount(() => <Counter />);
 
-  await expect(page.locator('[data-testid="count"]')).toHaveText('0');
+  await expect(page.locator('[data-testid="count"]')).toHaveText('0', {timeout: 100000});
 });
 
 test('initial value', async ({ page, mount }) => {

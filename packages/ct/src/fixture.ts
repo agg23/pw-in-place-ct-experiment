@@ -16,7 +16,12 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
       throw new Error('Attempted to call `mount` directly. This should be transformed by the Babel plugin');
     };
 
-    const rootProjectDir = ctRootDir;
+    let rootProjectDir = ctRootDir;
+
+    if (rootProjectDir.startsWith("file://")) {
+      // ESM adds file:// and it messes up path methods
+      rootProjectDir = rootProjectDir.slice("file://".length);
+    }
 
     mountFixture._mountInternal = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string) => {
       const scriptWorkingRelativeDir = path.relative(rootProjectDir, workingDir);
@@ -24,10 +29,13 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
       await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir, tempFilePath);
 
       let tempEvalPath = path.join(scriptWorkingRelativeDir, TEMP_TRANSPILED_FILE);
+      console.log('rootProjectDir', rootProjectDir);
+      console.log('workingDir', workingDir);
       console.log('scriptWorkingRelativeDir', scriptWorkingRelativeDir);
       console.log('tempFilePath', tempFilePath);
       console.log('tempEvalPath', tempEvalPath);
       if (!tempEvalPath.startsWith(path.sep)) {
+        // Consider path relative to the start of the project, which should be the root of the dev server
         tempEvalPath = `${path.sep}${tempEvalPath}`;
       }
 

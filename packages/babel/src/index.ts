@@ -1,6 +1,4 @@
 import { defineConfig as baseDefineConfig, PlaywrightTestConfig as BasePlaywrightTestConfig } from "@playwright/test";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
 
 export type PlaywrightTestConfig<T = {}, W = {}> = Omit<BasePlaywrightTestConfig<T, W>, 'use'> & {
   use: BasePlaywrightTestConfig<T, W>['use'] & {
@@ -21,13 +19,17 @@ export function defineConfig(config: PlaywrightTestConfig<{ test: string }>, ...
 export function defineConfig<T>(config: PlaywrightTestConfig<T>, ...configs: PlaywrightTestConfig<T>[]): PlaywrightTestConfig<T>;
 export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...configs: PlaywrightTestConfig<T, W>[]): PlaywrightTestConfig<T, W>;
 export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...configs: PlaywrightTestConfig<T, W>[]) {
-  return baseDefineConfig({
-    ...config,
-    // @ts-expect-error
+  const original = baseDefineConfig(config, ...configs);
+  return {
+    ...original,
+    build: {
+      // TODO: Remove. This is only necessary because of how Playwright runs Babel transforms on content not in the PW repo
+      external: ["**/packages/**"],
+    },
     "@playwright/test": {
       // @ts-expect-error
-      ...config["@playwright/test"],
+      ...original["@playwright/test"],
       babelPlugins: [[require.resolve("./mount-transform")]],
     },
-  }, configs);
+  } as PlaywrightTestConfig<T, W> & { "@playwright/test": {} };
 }

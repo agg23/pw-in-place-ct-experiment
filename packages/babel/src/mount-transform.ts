@@ -27,10 +27,6 @@ export default declare((api) => {
           }
           const workingDirectory = pathApi.dirname(state.filename);
 
-          console.log(
-            pathApi.resolve(pathApi.dirname(state.filename), "./Counter.tsx"),
-          );
-          console.log("filename", state.file.opts.filenameRelative);
           const finalImports = new Map(
             [...importBindings.entries()].map(([_binding, importPath]) => [
               importPath,
@@ -143,10 +139,11 @@ export default declare((api) => {
             );
             mount.arguments.push(imports);
             mount.arguments.push(
-              t.memberExpression(
-                t.metaProperty(t.identifier("import"), t.identifier("meta")),
-                t.identifier("dirname"),
-              ),
+              t.stringLiteral(workingDirectory),
+              // t.memberExpression(
+              //   t.metaProperty(t.identifier("import"), t.identifier("meta")),
+              //   t.identifier("dirname"),
+              // ),
             );
 
             // Rewrite mount lambda arguments (destructure all of them)
@@ -261,7 +258,6 @@ export default declare((api) => {
               testBodyLambdaPath.scope,
               importBindings,
             );
-            console.log(dependencies);
 
             mountDependencies.set(mountLambdaPath, dependencies);
           },
