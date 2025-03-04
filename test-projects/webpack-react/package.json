@@ -14,14 +14,15 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
-    "pw-ct": "*"
+    "pw-ct": "*",
+    "pw-webpack-plugin": "*"
   },
   "scripts": {
     "dev": "craco start",
     "build": "",
     "build:prod": "craco build",
     "test": "craco test",
-    "eject": "craco eject"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
