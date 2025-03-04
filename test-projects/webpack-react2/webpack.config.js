@@ -26,6 +26,9 @@ module.exports = {
   devtool: "source-map",
   devServer: {
     port: 8080,
+    // devMiddleware: {
+    //   writeToDisk: true,
+    // },
   },
   module: {
     rules: [

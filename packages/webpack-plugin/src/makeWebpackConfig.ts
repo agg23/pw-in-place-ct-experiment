@@ -149,6 +149,7 @@ export async function makeWebpackConfig (
   // } else {
   //   mergedConfig.entry = CYPRESS_WEBPACK_ENTRYPOINT
   // }
+  mergedConfig.entry = path.resolve(__dirname, 'webpackEntrypoint.js');
 
   debug('Merged webpack config %o', mergedConfig)
 

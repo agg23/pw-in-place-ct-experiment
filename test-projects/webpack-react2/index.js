@@ -1,3 +1,3 @@
-import { run } from 'pw-webpack-plugin';
+const { run } = require('pw-webpack-plugin');
 
-run(import.meta.dirname);
+run(__dirname);

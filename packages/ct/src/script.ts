@@ -61,7 +61,6 @@ export const buildUserContentScript = async (componentBuilder: () => object, imp
   
   const importArguments = Object.keys(imports).join(', ');
 
-  // This could also be configured per platform, removing the need for `__PW_CT_MOUNT__` to be global
   const userContentScript = `
   import { createRoot } from 'react-dom/client';
   import { jsx as _jsx } from 'react/jsx-runtime';

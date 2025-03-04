@@ -2,6 +2,7 @@ import path from 'path'
 import debugLib from 'debug'
 import type { Configuration } from 'webpack'
 import type { CreateFinalWebpackConfig } from './createWebpackDevServer'
+import HtmlWebpackPlugin from 'html-webpack-plugin'
 // import { CypressCTWebpackPlugin } from './CypressCTWebpackPlugin'
 
 const debug = debugLib('cypress:webpack-dev-server:makeDefaultWebpackConfig')
@@ -67,28 +68,29 @@ export function makeCypressWebpackConfig (
     optimization.noEmitOnErrors = false
   }
 
-  const publicPath = (path.sep === posixSeparator)
-    ? path.join(devServerPublicPathRoute, posixSeparator)
-    // The second line here replaces backslashes on windows with posix compatible slash
-    // See https://github.com/cypress-io/cypress/issues/16097
-    : path.join(devServerPublicPathRoute, posixSeparator)
-    .replace(OsSeparatorRE, posixSeparator)
+  // const publicPath = (path.sep === posixSeparator)
+  //   ? path.join(devServerPublicPathRoute, posixSeparator)
+  //   // The second line here replaces backslashes on windows with posix compatible slash
+  //   // See https://github.com/cypress-io/cypress/issues/16097
+  //   : path.join(devServerPublicPathRoute, posixSeparator)
+  //   .replace(OsSeparatorRE, posixSeparator)
 
   const finalConfig = {
     mode: 'development',
-    optimization,
+    // optimization,
     output: {
       filename: '[name].js',
       path: OUTPUT_PATH,
-      publicPath,
+      publicPath: '/',
     },
     plugins: [
-      // new (HtmlWebpackPlugin as typeof import('html-webpack-plugin-5'))({
-      //   template: indexHtmlFile ? path.isAbsolute(indexHtmlFile) ? indexHtmlFile : path.join(projectRoot, indexHtmlFile) : undefined,
-      //   // Angular generates all of it's scripts with <script type="module">. Live-reloading breaks without this option.
-      //   // We need to manually set the base here to `/__cypress/src/` so that static assets load with our proxy
-      //   ...(framework === 'angular' ? { scriptLoading: 'module', base: '/__cypress/src/' } : {}),
-      // }),
+      new HtmlWebpackPlugin({
+        template: path.join(__dirname, '../', 'index.html'),
+        // template: indexHtmlFile ? path.isAbsolute(indexHtmlFile) ? indexHtmlFile : path.join(projectRoot, indexHtmlFile) : undefined,
+        // Angular generates all of it's scripts with <script type="module">. Live-reloading breaks without this option.
+        // We need to manually set the base here to `/__cypress/src/` so that static assets load with our proxy
+        // ...(framework === 'angular' ? { scriptLoading: 'module', base: '/__cypress/src/' } : {}),
+      }),
       // new CypressCTWebpackPlugin({
       //   files,
       //   projectRoot,
@@ -111,17 +113,17 @@ export function makeCypressWebpackConfig (
   //   }
   // }
 
-  if (webpackDevServerMajorVersion === 4) {
-    return {
-      ...finalConfig,
-      devServer: {
-        port: webpackDevServerPort,
-        client: {
-          overlay: false,
-        },
-      },
-    }
-  }
+  // if (webpackDevServerMajorVersion === 4) {
+  //   return {
+  //     ...finalConfig,
+  //     devServer: {
+  //       port: webpackDevServerPort,
+  //       client: {
+  //         overlay: false,
+  //       },
+  //     },
+  //   }
+  // }
 
   // default is webpack-dev-server v5
   return {
@@ -131,6 +133,9 @@ export function makeCypressWebpackConfig (
       client: {
         overlay: false,
       },
+      devMiddleware: {
+        writeToDisk: true,
+      }
     },
   }
 }

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "find-up": "6.3.0",
+    "html-webpack-plugin": "^5.6.3",
     "local-pkg": "0.4.1",
     "webpack-dev-server": "^5.1.0"
   }
