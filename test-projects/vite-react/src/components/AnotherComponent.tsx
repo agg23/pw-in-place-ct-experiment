@@ -1,0 +1,1 @@
+export const AnotherComponent: React.FC = () => <div>Some text</div>;

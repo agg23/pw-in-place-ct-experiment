@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:pw": "vite --config vite-pw.config.ts",
     "build:prod": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

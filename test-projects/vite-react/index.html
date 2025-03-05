@@ -3,13 +3,8 @@
   <head>
     <title>Test app</title>
   </head>
-  <script type="module">
-    import { createRoot } from 'react-dom/client';
-
-    window.__PW_CT_MOUNT__ = (component) => createRoot(document.getElementById('ct-root')).render(component);
-  </script>
   <body>
-    <div id="ct-root">
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
