@@ -15,10 +15,8 @@ const getVirtualEntrypointPath = async (type: CTServerType) => {
     switch (type) {
       case 'vite': {
         try {
-          // TODO: Implement
-          throw new Error();
-          // const { VIRTUAL_ENTRYPOINT_PATH } = await import('vite');
-          // return VIRTUAL_ENTRYPOINT_PATH;
+          const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-ct-vite-plugin');
+          return VIRTUAL_ENTRYPOINT_PATH;
         } catch {
           throw new Error(`ctServerType: 'vite' is set but Vite is not installed`);
         }
@@ -69,7 +67,6 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name,
             body: script,
           }),
         });

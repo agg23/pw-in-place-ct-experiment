@@ -2,10 +2,6 @@ import { expect } from '@playwright/test';
 import { test } from 'pw-ct';
 import { Counter } from './Counter.tsx';
 
-test.beforeEach(async ({ page }) => {
-  await page.goto('http://localhost:5173/');
-});
-
 test('render', async ({ page, mount }) => {
   await mount(() => <Counter />);
 

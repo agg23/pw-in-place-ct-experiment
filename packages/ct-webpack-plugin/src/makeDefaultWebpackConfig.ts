@@ -141,8 +141,8 @@ export function makeCypressWebpackConfig (
       },
       setupMiddlewares: (middlewares, devServer) => {
         devServer.app.post(`/${VIRTUAL_ENTRYPOINT_NAME}`, bodyParser.json(), (req, res) => {
-          const body = req.body as { name: string, body: string };
-          if (!body.name || !body.body) {
+          const body = req.body as { body: string };
+          if (!body.body) {
             res.sendStatus(400);
             return;
           }

@@ -150,7 +150,7 @@ export async function makeWebpackConfig (
   //   mergedConfig.entry = CYPRESS_WEBPACK_ENTRYPOINT
   // }
   // TODO: Can we resolve directly to the virtual module?
-  mergedConfig.entry = path.resolve(__dirname, 'webpackEntrypoint.js');
+  mergedConfig.entry = path.resolve(__dirname, 'entrypoint.js');
 
   debug('Merged webpack config %o', mergedConfig)
 
