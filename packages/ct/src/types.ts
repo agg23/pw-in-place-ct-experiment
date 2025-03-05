@@ -14,3 +14,5 @@ export interface VirtualModuleRequest {
   name: string;
   body: string;
 }
+
+export type CTServerType = 'vite' | 'webpack';

@@ -1,39 +1,55 @@
 import { test as base } from '@playwright/test';
 import * as path from 'path';
 import { buildUserContentScript } from './script';
-import { Dependency } from './types';
+import { CTServerType, Dependency } from './types';
 import { VIRTUAL_ENTRYPOINT_NAME } from './virtual';
 
-// TODO: Detect Webpack vs Vite
-let VIRTUAL_ENTRYPOINT_PATH_PROMISE: Promise<string | undefined> = Promise.resolve().then(async () => {
-  try {
-    throw new Error();
-    await import('vite');
-    return 'TODO: Enter vite path';
-  } catch {
-    // Try Webpack
-    try {
-      const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-webpack-plugin');
-      return VIRTUAL_ENTRYPOINT_PATH;
-    } catch {
-      throw new Error('Failed to detect Vite or Webpack');
-    }
+let storedVirtualEntrypointPath: Promise<string | undefined> | undefined;
+
+const getVirtualEntrypointPath = async (type: CTServerType) => {
+  if (storedVirtualEntrypointPath) {
+    return await storedVirtualEntrypointPath;
   }
-});
 
-
-export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void>, ctRootDir: string | undefined }>({
-  ctRootDir: [undefined, { option: true }],
-  mount: async ({ page, ctRootDir }, use) => {
-    if (!ctRootDir) {
-      throw new Error('ctRootDir is not defined');
+  const checkPath = async () => {
+    switch (type) {
+      case 'vite': {
+        try {
+          // TODO: Implement
+          throw new Error();
+          // const { VIRTUAL_ENTRYPOINT_PATH } = await import('vite');
+          // return VIRTUAL_ENTRYPOINT_PATH;
+        } catch {
+          throw new Error(`ctServerType: 'vite' is set but Vite is not installed`);
+        }
+      }
+      case 'webpack': {
+        try {
+          const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-webpack-plugin');
+          return VIRTUAL_ENTRYPOINT_PATH;
+        } catch {
+          throw new Error(`ctServerType: 'webpack' is set but pw-webpack-plugin is not installed`);
+        }
+      }
+      // TODO: Assert never
+      default: {
+        throw new Error(`Unknown ctServerType: ${type}`);
+      }
     }
+  };
 
+  storedVirtualEntrypointPath = checkPath();
+  return await storedVirtualEntrypointPath;
+}
+
+export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void>, ctRootDir: string, ctServerType: CTServerType }>({
+  // These values are validated in `defineConfig`
+  ctRootDir: ['./', { option: true }],
+  ctServerType: ['vite', { option: true }],
+  mount: async ({ page, ctRootDir: rootProjectDir, ctServerType }, use) => {
     const mountFixture = async () => {
       throw new Error('Attempted to call `mount` directly. This should be transformed by the Babel plugin');
     };
-
-    let rootProjectDir = ctRootDir;
 
     if (rootProjectDir.startsWith("file://")) {
       // ESM adds file:// and it messes up path methods
@@ -45,7 +61,7 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
 
       const script = await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir);
       try {
-        const name = await VIRTUAL_ENTRYPOINT_PATH_PROMISE;
+        const name = await getVirtualEntrypointPath(ctServerType);
         await fetch(`http://localhost:8080/${VIRTUAL_ENTRYPOINT_NAME}`, {
           method: 'POST',
           headers: {

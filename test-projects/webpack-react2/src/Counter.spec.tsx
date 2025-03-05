@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { expect } from '@playwright/test';
 import { test } from 'pw-ct';
 import { Counter } from './Counter';

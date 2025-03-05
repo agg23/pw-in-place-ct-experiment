@@ -1,16 +1,4 @@
-import { defineConfig as baseDefineConfig, PlaywrightTestConfig as BasePlaywrightTestConfig } from "@playwright/test";
-
-export type PlaywrightTestConfig<T = {}, W = {}> = Omit<BasePlaywrightTestConfig<T, W>, 'use'> & {
-  use: BasePlaywrightTestConfig<T, W>['use'] & {
-    // ctPort?: number;
-    // ctTemplateDir?: string;
-    // ctCacheDir?: string;
-    // ctViteConfig?: InlineConfig | (() => Promise<InlineConfig>);
-    // TODO: I would really like to autodetect this, but I think the only thing that can be done is abusing exception stacks
-    ctRootDir: string;
-  };
-};
-
+import { defineConfig as baseDefineConfig, type PlaywrightTestConfig } from "@playwright/test";
 
 export function defineConfig(config: PlaywrightTestConfig): PlaywrightTestConfig;
 export function defineConfig<T>(config: PlaywrightTestConfig<T>): PlaywrightTestConfig<T>;
