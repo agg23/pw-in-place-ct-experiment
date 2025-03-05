@@ -4,6 +4,5 @@ import { pwPlugin } from 'pw-ct-vite-plugin'
 
 // https://vite.dev/config/
 export default defineConfig({
-  server: { port: 3100 },
   plugins: [react(), pwPlugin()],
 })

@@ -1,6 +1,5 @@
 import type { IncomingMessage } from 'http';
 import type { Plugin } from 'vite';
-import * as path from 'path';
 
 // TODO: Remove duplication with Webpack
 export const VIRTUAL_ENTRYPOINT_NAME = '_pw-ct-entrypoint';
@@ -26,6 +25,7 @@ export const pwPlugin = (): Plugin => {
     name: 'pw-ct-vite-plugin',
     config: (config) => {
       config.server = config.server || {};
+      config.server.port = 3100;
       config.server.hmr = false;
       return config;
     },
