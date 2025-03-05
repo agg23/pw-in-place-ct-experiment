@@ -14,14 +14,14 @@ const removeList = [
   // We provide a webpack-html-plugin config pinned to a specific version (4.x)
   // that we have tested and are confident works with all common configurations.
   // https://github.com/cypress-io/cypress/issues/15865
-  // 'HtmlWebpackPlugin',
+  'HtmlWebpackPlugin',
 
   // This plugin is an optimization for HtmlWebpackPlugin for use in
   // production environments, not relevant for testing.
-  // 'PreloadPlugin',
+  'PreloadPlugin',
 
   // Another optimization not relevant in a testing environment.
-  // 'HtmlPwaPlugin',
+  'HtmlPwaPlugin',
 
   // We already reload when webpack recompiles (via listeners on
   // devServerEvents). Removing this plugin can prevent double-refreshes
