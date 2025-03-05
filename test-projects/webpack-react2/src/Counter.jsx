@@ -1,11 +1,13 @@
-import { useState } from "react";
-import styles from './Counter.module.scss';
+import React, { useState } from "react";
+import * as styles from './Counter.module.scss';
 
-export const Counter: React.FC<{ initial?: number }> = ({ initial }) => {
+debugger;
+
+export const Counter = ({ initial }) => {
   const [count, setCount] = useState(initial ?? 0);
 
   return (
-    <div className={styles.counter}>
+    <div className={styles.testClass}>
       <div data-testid="count">{count}</div>
       <button onClick={() => setCount(count + 1)}>Increment</button>
       <button onClick={() => setCount(count - 1)}>Decrement</button>

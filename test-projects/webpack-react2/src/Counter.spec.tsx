@@ -1,9 +1,9 @@
 import { expect } from '@playwright/test';
 import { test } from 'pw-ct';
-import { Counter } from './Counter.tsx';
+import { Counter } from './Counter';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('http://localhost:5173/');
+  // await page.goto('http://localhost:5173/');
 });
 
 test('render', async ({ page, mount }) => {

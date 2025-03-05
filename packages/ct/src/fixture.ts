@@ -1,9 +1,26 @@
 import { test as base } from '@playwright/test';
 import * as path from 'path';
-import { buildUserContentScript, evaluateTransformedScript } from './script';
+import { buildUserContentScript } from './script';
 import { Dependency } from './types';
+import { VIRTUAL_ENTRYPOINT_NAME } from './virtual';
 
-const TEMP_TRANSPILED_FILE = '.tmp.tsx';
+// TODO: Detect Webpack vs Vite
+let VIRTUAL_ENTRYPOINT_PATH_PROMISE: Promise<string | undefined> = Promise.resolve().then(async () => {
+  try {
+    throw new Error();
+    await import('vite');
+    return 'TODO: Enter vite path';
+  } catch {
+    // Try Webpack
+    try {
+      const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-webpack-plugin');
+      return VIRTUAL_ENTRYPOINT_PATH;
+    } catch {
+      throw new Error('Failed to detect Vite or Webpack');
+    }
+  }
+});
+
 
 export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void>, ctRootDir: string | undefined }>({
   ctRootDir: [undefined, { option: true }],
@@ -25,21 +42,25 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
 
     mountFixture._mountInternal = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string) => {
       const scriptWorkingRelativeDir = path.relative(rootProjectDir, workingDir);
-      const tempFilePath = path.resolve(workingDir, TEMP_TRANSPILED_FILE);
-      await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir, tempFilePath);
 
-      let tempEvalPath = path.join(scriptWorkingRelativeDir, TEMP_TRANSPILED_FILE);
-      console.log('rootProjectDir', rootProjectDir);
-      console.log('workingDir', workingDir);
-      console.log('scriptWorkingRelativeDir', scriptWorkingRelativeDir);
-      console.log('tempFilePath', tempFilePath);
-      console.log('tempEvalPath', tempEvalPath);
-      if (!tempEvalPath.startsWith(path.sep)) {
-        // Consider path relative to the start of the project, which should be the root of the dev server
-        tempEvalPath = `${path.sep}${tempEvalPath}`;
+      const script = await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir);
+      try {
+        const name = await VIRTUAL_ENTRYPOINT_PATH_PROMISE;
+        await fetch(`http://localhost:8080/${VIRTUAL_ENTRYPOINT_NAME}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name,
+            body: script,
+          }),
+        });
+      } catch (e) {
+        console.error('Failed to update virtual module', e);
       }
 
-      await evaluateTransformedScript(page, tempEvalPath);
+      await page.goto('http://localhost:8080');
     };
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

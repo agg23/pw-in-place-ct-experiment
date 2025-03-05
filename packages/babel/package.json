@@ -6,7 +6,8 @@
   "author": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -Rf dist && tsc -b"
+    "build": "rm -Rf dist && tsc -b",
+    "watch": "tsc --watch"
   },
   "devDependencies": {
     "@babel/types": "^7.26.9",

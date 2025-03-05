@@ -2,7 +2,7 @@ import { debug as debugFn } from 'debug'
 import * as path from 'path'
 import { merge } from 'webpack-merge'
 import { importModule } from 'local-pkg'
-import type { Configuration, EntryObject } from 'webpack'
+import type { Configuration } from 'webpack'
 import { makeCypressWebpackConfig } from './makeDefaultWebpackConfig'
 import type { CreateFinalWebpackConfig } from './createWebpackDevServer'
 import { configFiles } from './constants'
@@ -149,6 +149,7 @@ export async function makeWebpackConfig (
   // } else {
   //   mergedConfig.entry = CYPRESS_WEBPACK_ENTRYPOINT
   // }
+  // TODO: Can we resolve directly to the virtual module?
   mergedConfig.entry = path.resolve(__dirname, 'webpackEntrypoint.js');
 
   debug('Merged webpack config %o', mergedConfig)

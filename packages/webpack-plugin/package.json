@@ -6,7 +6,8 @@
   "author": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "rm -Rf dist && tsc -b"
+    "build": "rm -Rf dist && tsc -b",
+    "watch": "tsc --watch"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
@@ -14,9 +15,12 @@
     "webpack-dev-server-4": "npm:webpack-dev-server@^4"
   },
   "dependencies": {
+    "body-parser": "^1.20.3",
     "find-up": "6.3.0",
     "html-webpack-plugin": "^5.6.3",
     "local-pkg": "0.4.1",
-    "webpack-dev-server": "^5.1.0"
+    "webpack-dev-server": "^5.1.0",
+    "webpack-merge": "^6.0.1",
+    "webpack-virtual-modules": "^0.6.2"
   }
 }

@@ -1,9 +1,7 @@
-import { Page } from '@playwright/test';
 import * as path from 'path';
-import * as fs from 'fs';
 import type { DedupedImport, Dependency } from './types';
 
-export const buildUserContentScript = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string, tempFilePath: string) => {
+export const buildUserContentScript = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string) => {
   const dedupedImports = new Map<string, DedupedImport>();
 
   for (const [variableName, dependency] of Object.entries(imports)) {
@@ -61,23 +59,15 @@ export const buildUserContentScript = async (componentBuilder: () => object, imp
   
   const importArguments = Object.keys(imports).join(', ');
 
-  const userContentScript = `
+  return `
   import { createRoot } from 'react-dom/client';
   import { jsx as _jsx } from 'react/jsx-runtime';
-  import * as _jsxRuntime from 'playwright/jsx-runtime';
+  // import * as _jsxRuntime from 'playwright/jsx-runtime';
+  const _jsxRuntime = { jsx: _jsx };
   ${importExpressions}
   export default () => {
     const component = (${componentBuilder.toString()})({${importArguments}});
     createRoot(document.getElementById('ct-root')).render(component);
   }
   `;
-  fs.writeFileSync(tempFilePath, userContentScript);
-  // TODO: Figure out how to prevent Vite file watcher from triggering late and reloading the page while we're testing
-  await new Promise(resolve => setTimeout(resolve, 500));
 }
-
-export const evaluateTransformedScript = (page: Page, tempFilePath: string) => page.evaluate(
-  // When not declared as a template string this can be transpiled
-  ({ scriptPath }) => eval(`debugger; import('${scriptPath}').then(module => module.default())`),
-  { scriptPath: tempFilePath }
-);

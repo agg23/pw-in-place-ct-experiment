@@ -10,3 +10,7 @@ export interface DedupedImport {
   namespace?: string;
 }
 
+export interface VirtualModuleRequest {
+  name: string;
+  body: string;
+}

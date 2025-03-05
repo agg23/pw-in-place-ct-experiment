@@ -1,5 +1,3 @@
-export default function webpackEntrypoint() {
-  console.log('entrypoint');
-}
+const { default: entrypoint } = require('_pw-ct-entrypoint');
 
-console.log('outer');
+entrypoint();

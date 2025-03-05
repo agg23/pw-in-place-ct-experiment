@@ -3,6 +3,8 @@ import debugLib from 'debug'
 import type { Configuration } from 'webpack'
 import type { CreateFinalWebpackConfig } from './createWebpackDevServer'
 import HtmlWebpackPlugin from 'html-webpack-plugin'
+import bodyParser from 'body-parser';
+import { VIRTUAL_ENTRYPOINT_NAME, VIRTUAL_ENTRYPOINT_PATH, virtualModules } from './virtualModules'
 // import { CypressCTWebpackPlugin } from './CypressCTWebpackPlugin'
 
 const debug = debugLib('cypress:webpack-dev-server:makeDefaultWebpackConfig')
@@ -84,6 +86,7 @@ export function makeCypressWebpackConfig (
       publicPath: '/',
     },
     plugins: [
+      virtualModules,
       new HtmlWebpackPlugin({
         template: path.join(__dirname, '../', 'index.html'),
         // template: indexHtmlFile ? path.isAbsolute(indexHtmlFile) ? indexHtmlFile : path.join(projectRoot, indexHtmlFile) : undefined,
@@ -101,7 +104,7 @@ export function makeCypressWebpackConfig (
       // }),
     ],
     devtool: 'inline-source-map',
-  } as any
+  } as Configuration;
 
   // if (isRunMode) {
   //   // if justInTimeCompile is configured, we need to watch for file changes as the spec entries are going to be updated per test
@@ -135,6 +138,19 @@ export function makeCypressWebpackConfig (
       },
       devMiddleware: {
         writeToDisk: true,
+      },
+      setupMiddlewares: (middlewares, devServer) => {
+        devServer.app.post(`/${VIRTUAL_ENTRYPOINT_NAME}`, bodyParser.json(), (req, res) => {
+          const body = req.body as { name: string, body: string };
+          if (!body.name || !body.body) {
+            res.sendStatus(400);
+            return;
+          }
+          virtualModules.writeModule(VIRTUAL_ENTRYPOINT_PATH, body.body);
+          res.sendStatus(200);
+        });
+
+        return middlewares;
       }
     },
   }

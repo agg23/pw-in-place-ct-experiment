@@ -7,7 +7,7 @@
     "test-projects/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces --if-present"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1"
