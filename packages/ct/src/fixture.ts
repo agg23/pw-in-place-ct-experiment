@@ -25,7 +25,7 @@ const getVirtualEntrypointPath = async (type: CTServerType) => {
       }
       case 'webpack': {
         try {
-          const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-webpack-plugin');
+          const { VIRTUAL_ENTRYPOINT_PATH } = await import('pw-ct-webpack-plugin');
           return VIRTUAL_ENTRYPOINT_PATH;
         } catch {
           throw new Error(`ctServerType: 'webpack' is set but pw-webpack-plugin is not installed`);

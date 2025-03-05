@@ -1,3 +1,3 @@
-const { run } = require('pw-webpack-plugin');
+const { run } = require('pw-ct-webpack-plugin');
 
 run(__dirname);

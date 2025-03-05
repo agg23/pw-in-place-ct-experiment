@@ -16,6 +16,6 @@
   "dependencies": {
     "@playwright/test": "^1.50.1",
     "pw-ct-babel": "*",
-    "pw-webpack-plugin": "*"
+    "pw-ct-webpack-plugin": "*"
   }
 }
