@@ -42,11 +42,12 @@ const getVirtualEntrypointPath = async (type: CTServerType) => {
   return await storedVirtualEntrypointPath;
 }
 
-export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void>, ctRootDir: string, ctServerType: CTServerType }>({
+export const test = base.extend<{ mount: (componentBuilder: () => object) => Promise<void>, ctRootDir: string, ctServerType: CTServerType, ctPort: number }>({
   // These values are validated in `defineConfig`
   ctRootDir: ['./', { option: true }],
   ctServerType: ['vite', { option: true }],
-  mount: async ({ page, ctRootDir: rootProjectDir, ctServerType }, use) => {
+  ctPort: [3100, { option: true }],
+  mount: async ({ page, ctRootDir: rootProjectDir, ctServerType, ctPort }, use) => {
     const mountFixture = async () => {
       throw new Error('Attempted to call `mount` directly. This should be transformed by the Babel plugin');
     };
@@ -62,7 +63,7 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
       const script = await buildUserContentScript(componentBuilder, imports, scriptWorkingRelativeDir);
       try {
         const name = await getVirtualEntrypointPath(ctServerType);
-        await fetch(`http://localhost:8080/${VIRTUAL_ENTRYPOINT_NAME}`, {
+        await fetch(`http://localhost:${ctPort}/${VIRTUAL_ENTRYPOINT_NAME}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ export const test = base.extend<{ mount: (componentBuilder: () => object) => Pro
         console.error('Failed to update virtual module', e);
       }
 
-      await page.goto('http://localhost:8080');
+      await page.goto(`http://localhost:${ctPort}`);
     };
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

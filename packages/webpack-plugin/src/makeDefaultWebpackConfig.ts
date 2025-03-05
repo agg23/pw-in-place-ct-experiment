@@ -49,7 +49,7 @@ export function makeCypressWebpackConfig (
   } = config
 
   // const webpackDevServerPort = port ?? undefined
-  const webpackDevServerPort = 8080;
+  const webpackDevServerPort = 3100;
   const devServerPublicPathRoute = './';
 
   // debug(`Using HtmlWebpackPlugin version ${htmlWebpackPluginVersion} from ${htmlWebpackPluginImportPath}`)
