@@ -1,7 +1,9 @@
 import * as path from 'path';
-import type { DedupedImport, Dependency } from './types';
+import type { CTFramework, DedupedImport, Dependency, MountFixture } from './types';
+import { generateReact } from './framework/react';
+import { generateVue } from './framework/vue';
 
-export const buildUserContentScript = async (componentBuilder: () => object, imports: Record<string, Dependency>, workingDir: string) => {
+const buildImports = (imports: Record<string, Dependency>, workingDir: string): { importExpressions: string[], componentArguments: string[] } => {
   const dedupedImports = new Map<string, DedupedImport>();
 
   for (const [variableName, dependency] of Object.entries(imports)) {
@@ -55,19 +57,27 @@ export const buildUserContentScript = async (componentBuilder: () => object, imp
     }
 
     return importExpressions;
-  }).join('\n');
+  });
   
-  const importArguments = Object.keys(imports).join(', ');
+  const componentArguments = Object.keys(imports);
 
-  return `
-  import { createRoot } from 'react-dom/client';
-  import { jsx as _jsx } from 'react/jsx-runtime';
-  // import * as _jsxRuntime from 'playwright/jsx-runtime';
-  const _jsxRuntime = { jsx: _jsx };
-  ${importExpressions}
-  export default () => {
-    const component = (${componentBuilder.toString()})({${importArguments}});
-    createRoot(document.getElementById('ct-root')).render(component);
+  return { importExpressions, componentArguments };
+}
+
+export const buildUserContentScript = async <T extends CTFramework>(componentBuilder: MountFixture[T], imports: Record<string, Dependency>, workingDir: string, framework: T) => {
+  const { importExpressions, componentArguments } = buildImports(imports, workingDir);
+
+  const allImports = importExpressions.join('\n');
+  const componentInstantiation = `(${componentBuilder.toString()})({${componentArguments.join(', ')}})`;
+
+  switch (framework) {
+    case 'react':
+      return generateReact(allImports, componentInstantiation);
+    case 'vue':
+      return generateVue(allImports, componentInstantiation);
+    case 'svelte':
+    
+    default:
+      throw new Error(`Unknown framework: ${framework}`);
   }
-  `;
 }

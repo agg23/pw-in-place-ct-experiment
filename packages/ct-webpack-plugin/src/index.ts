@@ -4,6 +4,8 @@ import type WebpackDevServer4 from 'webpack-dev-server-4'
 import { sourceDefaultWebpackDependencies } from "./sourceRelativeWebpackModules"
 import { createWebpackDevServer } from './createWebpackDevServer';
 
+export { VIRTUAL_ENTRYPOINT_PATH } from './virtualModules';
+
 export const run = async (projectRoot: string) => {
   const sourceWebpackModulesResult = sourceDefaultWebpackDependencies({ projectRoot });
 

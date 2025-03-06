@@ -8,7 +8,10 @@ import { Dependency, getLambdaDependencies } from "./util.js";
 let importBindings: Map<Binding, NodePath<t.ImportDeclaration>>;
 let mountDependencies: Map<
   NodePath<t.ArrowFunctionExpression>,
-  Record<string, Dependency>
+  {
+    dependencies: Record<string, Dependency>,
+    framework: string,
+  }
 >;
 
 export default declare((api) => {
@@ -101,15 +104,20 @@ export default declare((api) => {
           // Rewrite mount functions
           for (const [
             mountLambda,
-            dependencies,
+            { dependencies, framework },
           ] of mountDependencies.entries()) {
             // Rewrite mount call
             const mount = mountLambda.parent as t.CallExpression;
             if (t.isV8IntrinsicIdentifier(mount.callee)) {
               continue;
             }
+
+            let memberObject = mount.callee;
+            if (t.isMemberExpression(mount.callee)) {
+              memberObject = mount.callee.object;
+            }
             mount.callee = t.memberExpression(
-              mount.callee,
+              memberObject,
               t.identifier("_mountInternal"),
             );
 
@@ -145,6 +153,7 @@ export default declare((api) => {
               //   t.identifier("dirname"),
               // ),
             );
+            mount.arguments.push(t.stringLiteral(framework));
 
             // Rewrite mount lambda arguments (destructure all of them)
             const properties = Object.entries(dependencies).map(
@@ -233,12 +242,10 @@ export default declare((api) => {
         // TODO: Traverse deep references (passed to functions)
         testBodyLambdaPath.traverse({
           CallExpression(mountCallPath) {
-            if (
-              !t.isIdentifier(mountCallPath.node.callee) ||
-              mountCallPath.node.callee.name !== "mount"
-            ) {
+            if (!t.isMemberExpression(mountCallPath.node.callee) || !t.isIdentifier(mountCallPath.node.callee.object) || mountCallPath.node.callee.object.name !== "mount" || !t.isIdentifier(mountCallPath.node.callee.property)) {
               return;
             }
+            const framework = mountCallPath.node.callee.property.name;
 
             const mountLambdaIndex = mountCallPath.node.arguments.findIndex(
               (arg) => t.isArrowFunctionExpression(arg),
@@ -259,7 +266,7 @@ export default declare((api) => {
               importBindings,
             );
 
-            mountDependencies.set(mountLambdaPath, dependencies);
+            mountDependencies.set(mountLambdaPath, { dependencies, framework });
           },
         });
       },
