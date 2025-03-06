@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from 'pw-ct';
 import { Counter } from './Counter.tsx';
 import { AnotherComponent } from './AnotherComponent.tsx';
+import VueComponent from './VueComponent.vue';
 
 test('render', async ({ page, mount }) => {
   await mount.react(() => <Counter />);
@@ -25,6 +26,17 @@ test('increment', async ({ page, mount }) => {
 test('intermixed different import', async ({ page, mount }) => {
   await mount.react(() => <AnotherComponent />);
 
+  await expect(page.locator('body')).toHaveText('Some text');
+});
+
+test('intermixed Vue import', async ({ page, mount }) => {
+  await mount.react(() => <AnotherComponent />);
+  await expect(page.locator('body')).toHaveText('Some text');
+
+  await mount.vue(() => ({ component: VueComponent, props: { msg: "Hello world" } }));
+  await expect(page.locator('body')).toHaveText('Welcome to Vue: Hello world');
+
+  await mount.react(() => <AnotherComponent />);
   await expect(page.locator('body')).toHaveText('Some text');
 });
 

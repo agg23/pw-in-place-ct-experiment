@@ -194,9 +194,17 @@ export default declare((api) => {
         }
       },
       CallExpression(path) {
+        // TODO: Detect this more accurately
+        let rootNode = path.node.callee;
+
+        if (t.isMemberExpression(rootNode)) {
+          rootNode = rootNode.object;
+        }
+
+        // Detect test() and test.*()
         if (
-          !t.isIdentifier(path.node.callee) ||
-          path.node.callee.name !== "test"
+          !t.isIdentifier(rootNode) ||
+          rootNode.name !== "test"
         ) {
           return;
         }
