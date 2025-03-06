@@ -2,6 +2,7 @@ import * as path from 'path';
 import type { CTFramework, DedupedImport, Dependency, MountFixture } from './types';
 import { generateReact } from './framework/react';
 import { generateVue } from './framework/vue';
+import { generateSvelte } from './framework/svelte';
 
 const buildImports = (imports: Record<string, Dependency>, workingDir: string): { importExpressions: string[], componentArguments: string[] } => {
   const dedupedImports = new Map<string, DedupedImport>();
@@ -76,7 +77,7 @@ export const buildUserContentScript = async <T extends CTFramework>(componentBui
     case 'vue':
       return generateVue(allImports, componentInstantiation);
     case 'svelte':
-    
+      return generateSvelte(allImports, componentInstantiation);
     default:
       throw new Error(`Unknown framework: ${framework}`);
   }

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { createApp } from 'vue';
+import type { createApp } from 'vue';
+import type { mount } from 'svelte'
 
 export interface Dependency {
   url: string;
@@ -26,9 +27,15 @@ interface VueCreateObject {
   props?: VueCreateParams[1];
 }
 
+type SvelteMountParams = Parameters<typeof mount>;
+interface SvelteMountObject {
+  component: SvelteMountParams[0];
+  props?: SvelteMountParams[1];
+}
+
 // TODO: Add a type assertion for CTFramework
 export interface MountFixture {
   react: (componentBuilder: () => ReactNode) => Promise<void>;
   vue: (componentBuilder: () => VueCreateObject) => Promise<void>;
-  svelte: (componentBuilder: () => object) => Promise<void>;
+  svelte: (componentBuilder: () => SvelteMountObject) => Promise<void>;
 }

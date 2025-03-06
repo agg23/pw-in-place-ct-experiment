@@ -1,5 +1,5 @@
 export const generateVue = (imports: string, componentInstantiation: string) =>  `
-import { createApp } from 'vue'
+import { createApp } from 'vue';
 ${imports}
 export default () => {
   const { component, props } = ${componentInstantiation};
