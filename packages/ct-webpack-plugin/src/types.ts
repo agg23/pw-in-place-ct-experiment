@@ -1,3 +1,5 @@
+import { SourceRelativeWebpackResult } from "./sourceRelativeWebpackModules"
+
 export type WebpackDevServerConfig = {
   // specs: Cypress.Spec[]
   // cypressConfig: Cypress.PluginConfigOptions
@@ -8,3 +10,5 @@ export type WebpackDevServerConfig = {
   webpackConfig?: {},
 } 
 // & FrameworkConfig
+
+export type PresetHandlerResult = { frameworkConfig: {}, sourceWebpackModulesResult: SourceRelativeWebpackResult }

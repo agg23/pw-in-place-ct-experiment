@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:pw": "node index.js",
     "build:prod": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -18,6 +19,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "pw-ct": "*"
+    "pw-ct": "*",
+    "pw-ct-webpack-plugin": "*"
   }
 }
