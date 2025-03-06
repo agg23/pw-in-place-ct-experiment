@@ -1,6 +1,5 @@
 import { defineConfig as baseDefineConfig } from "pw-ct-babel";
 import { type PlaywrightTestConfig as BasePlaywrightTestConfig } from "@playwright/test";
-import { CTServerType } from "./types";
 
 export { test } from "./fixture";
 
@@ -10,7 +9,6 @@ export type PlaywrightTestConfig<T = {}, W = {}> = Omit<BasePlaywrightTestConfig
     // ctCacheDir?: string;
     // ctViteConfig?: InlineConfig | (() => Promise<InlineConfig>);
     ctPort?: number;
-    ctServerType: CTServerType;
     // TODO: I would really like to autodetect this, but I think the only thing that can be done is abusing exception stacks
     ctRootDir: string;
   };
@@ -28,10 +26,6 @@ export function defineConfig<T, W>(config: PlaywrightTestConfig<T, W>, ...config
   // TODO: Improve this
   if (!original.use?.ctRootDir) {
     throw new Error('ctRootDir is not defined');
-  }
-
-  if (!original.use?.ctServerType) {
-    throw new Error('ctServerType is required');
   }
 
   return original as PlaywrightTestConfig<T, W>;
