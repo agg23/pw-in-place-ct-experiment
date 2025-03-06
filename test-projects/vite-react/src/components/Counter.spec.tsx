@@ -3,11 +3,12 @@ import { test } from 'pw-ct';
 import { Counter } from './Counter.tsx';
 import { AnotherComponent } from './AnotherComponent.tsx';
 import VueComponent from './VueComponent.vue';
+import { Wrapper } from './Wrapper.tsx';
 
 test('render', async ({ page, mount }) => {
   await mount.react(() => <Counter />);
 
-  await expect(page.locator('[data-testid="count"]')).toHaveText('0', {timeout: 100000});
+  await expect(page.locator('[data-testid="count"]')).toHaveText('0');
 });
 
 test('initial value', async ({ page, mount }) => {
@@ -45,4 +46,11 @@ test('decrement', async ({ page, mount }) => {
 
   await page.getByText('Decrement').click();
   await expect(page.locator('[data-testid="count"]')).toHaveText('-1');
+});
+
+test('complex jsx', async ({ page, mount }) => {
+  await mount.react(() => <Wrapper><Counter initial={123} /></Wrapper>);
+
+  await expect(page.locator('body')).toContainText('This is some wrapper');
+  await expect(page.locator('[data-testid="count"]')).toHaveText('123');
 });
