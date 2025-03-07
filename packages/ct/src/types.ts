@@ -2,9 +2,14 @@ import type { ReactNode } from 'react';
 import type { createApp } from 'vue';
 import type { mount } from 'svelte'
 
-export interface Dependency {
+export type Dependency = {
   url: string;
   type: 'named' | 'default' | 'namespace';
+  form: 'import';
+} | {
+  url: string;
+  type: 'named' | 'default';
+  form: 'require';
 }
 
 export interface DedupedImport {
@@ -12,6 +17,12 @@ export interface DedupedImport {
   named: string[];
   default?: string;
   namespace?: string;
+}
+
+export interface DedupedRequire {
+  // TODO: Support renaming
+  named: string[];
+  default?: string;
 }
 
 export interface VirtualModuleRequest {

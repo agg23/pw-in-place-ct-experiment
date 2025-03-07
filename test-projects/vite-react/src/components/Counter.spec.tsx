@@ -4,6 +4,7 @@ import { Counter } from './Counter.tsx';
 import { AnotherComponent } from './AnotherComponent.tsx';
 import VueComponent from './VueComponent.vue';
 import { Wrapper } from './Wrapper.tsx';
+import CustomImport from '@/App.tsx';
 
 test('render', async ({ page, mount }) => {
   await mount.react(() => <Counter />);
@@ -48,9 +49,15 @@ test('decrement', async ({ page, mount }) => {
   await expect(page.locator('[data-testid="count"]')).toHaveText('-1');
 });
 
-test('complex jsx', async ({ page, mount }) => {
+test('nested jsx', async ({ page, mount }) => {
   await mount.react(() => <Wrapper><Counter initial={123} /></Wrapper>);
 
   await expect(page.locator('body')).toContainText('This is some wrapper');
   await expect(page.locator('[data-testid="count"]')).toHaveText('123');
+});
+
+test('custom import', async ({ page, mount }) => {
+  await mount.react(() => <CustomImport />);
+
+  await expect(page.locator('body')).toContainText('Click on the Vite and React logos to learn more');
 });

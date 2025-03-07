@@ -6,4 +6,9 @@ import { pwPlugin } from 'pw-ct-vite-plugin'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), vue(), pwPlugin()],
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })

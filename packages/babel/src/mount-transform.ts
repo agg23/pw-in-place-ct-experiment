@@ -3,9 +3,10 @@ import { declare } from "@babel/helper-plugin-utils";
 import * as t from "@babel/types";
 import type { Binding } from "@babel/traverse";
 import * as pathApi from "path";
-import { Dependency, getLambdaDependencies } from "./util.js";
+import { Dependency, getLambdaDependencies, getObjectPropertyValues } from "./util.js";
 
 let importBindings: Map<Binding, NodePath<t.ImportDeclaration>>;
+let requireBindings: Map<Binding, NodePath<t.CallExpression>>;
 let mountDependencies: Map<
   NodePath<t.ArrowFunctionExpression>,
   {
@@ -18,6 +19,7 @@ export default declare((api) => {
   api.assertVersion(7);
 
   importBindings = new Map();
+  requireBindings = new Map();
   mountDependencies = new Map();
 
   return {
@@ -37,6 +39,44 @@ export default declare((api) => {
             ]),
           );
 
+          const finalRequires = new Map(
+            [...requireBindings.entries()].map(([_binding, requirePath]) => [
+              requirePath,
+              { nonMountUsage: false },
+            ]),
+          );
+
+          const checkIncludeUsage = <T extends t.ImportDeclaration | t.CallExpression>(
+              binding: Binding,
+              identifierPath: NodePath<t.Identifier | t.JSXIdentifier>,
+              bindings: Map<Binding, NodePath<T>>,
+              finalIncludes: Map<NodePath<T>, {
+                nonMountUsage: boolean;
+              }>) => {
+            const includePath = bindings.get(binding);
+
+            if (!includePath) {
+              return;
+            }
+
+            let parent = identifierPath as NodePath | null;
+            while (!!parent) {
+              if (
+                mountDependencies.has(
+                  parent as NodePath<t.ArrowFunctionExpression>,
+                )
+              ) {
+                // Stop iterating; this is a mount usage
+                return;
+              }
+
+              parent = parent.parentPath;
+            }
+
+            // This wasn't in mount, so it was used elsewhere
+            finalIncludes.get(includePath)!.nonMountUsage = true;
+          }
+
           // Find all import references across the program
           path.traverse({
             ReferencedIdentifier(identifierPath) {
@@ -48,56 +88,29 @@ export default declare((api) => {
                 return;
               }
 
-              const importPath = importBindings.get(binding);
-
-              if (!importPath) {
-                return;
-              }
-
-              // const specifier = importPath.node.specifiers.find(
-              //   (specifier) =>
-              //     t.isImportSpecifier(specifier) &&
-              //     specifier.local.name === identifierPath.node.name,
-              // );
-
-              // if (!specifier) {
-              //   throw new Error(
-              //     `Could not find specifier for ${identifierPath.node.name}`,
-              //   );
-              // }
-
-              let parent = identifierPath as NodePath | null;
-              while (!!parent) {
-                if (
-                  mountDependencies.has(
-                    parent as NodePath<t.ArrowFunctionExpression>,
-                  )
-                ) {
-                  // Stop iterating; this is a mount usage
-                  return;
-                }
-
-                parent = parent.parentPath;
-              }
-
-              // This wasn't in mount, so it was used elsewhere
-              finalImports.get(importPath)!.nonMountUsage = true;
+              checkIncludeUsage(binding, identifierPath, importBindings, finalImports);
             },
           });
 
-          // Remove any imports used in mount exclusively
+          // Remove any includes used in mount exclusively
           for (const [
-            importNode,
+            includeNode,
             { nonMountUsage },
-          ] of finalImports.entries()) {
+          ] of [...finalImports.entries(), ...finalRequires.entries()]) {
             if (nonMountUsage) {
-              // This import was used outside of mount, so we need to keep it
+              // This includes was used outside of mount, so we need to keep it
               continue;
             }
 
-            // Remove the import
-            if (!importNode.removed) {
-              importNode.remove();
+            let node: NodePath = includeNode;
+            if (t.isCallExpression(node.node)) {
+              // This is a require
+              node = includeNode.parentPath;
+            }
+
+            // Remove the include
+            if (!node.removed) {
+              node.remove();
             }
           }
 
@@ -123,23 +136,20 @@ export default declare((api) => {
 
             const imports = t.objectExpression(
               Object.entries(dependencies).map(([identifier, dependency]) => {
-                let importURL = dependency.url;
-                if (importURL.startsWith(".")) {
-                  // Relative path
-                  importURL = pathApi.resolve(workingDirectory, importURL);
-                }
-                // TODO: This won't handle other magic imports like `@prefix/suburl`
-
                 return t.objectProperty(
                   t.identifier(identifier),
                   t.objectExpression([
                     t.objectProperty(
                       t.identifier("url"),
-                      t.stringLiteral(importURL),
+                      t.stringLiteral(dependency.url),
                     ),
                     t.objectProperty(
                       t.identifier("type"),
                       t.stringLiteral(dependency.type),
+                    ),
+                    t.objectProperty(
+                      t.identifier("form"),
+                      t.stringLiteral(dependency.form),
                     ),
                   ]),
                 );
@@ -194,93 +204,141 @@ export default declare((api) => {
         }
       },
       CallExpression(path) {
-        // TODO: Detect this more accurately
-        let rootNode = path.node.callee;
-
-        if (t.isMemberExpression(rootNode)) {
-          rootNode = rootNode.object;
-        }
-
-        // Detect test() and test.*()
-        if (
-          !t.isIdentifier(rootNode) ||
-          rootNode.name !== "test"
-        ) {
-          return;
-        }
-
-        const testBodyLambdaIndex = path.node.arguments.findIndex((arg) =>
-          t.isArrowFunctionExpression(arg),
-        );
-
-        if (testBodyLambdaIndex === -1) {
-          return;
-        }
-
-        const testBodyLambdaPath = path.get(
-          `arguments.${testBodyLambdaIndex}`,
-        ) as NodePath<t.ArrowFunctionExpression>;
-
-        // const testBodyLambda = path.node.arguments[
-        //   testBodyLambdaIndex
-        // ] as t.ArrowFunctionExpression;
-        const testBodyLambda = testBodyLambdaPath.node;
-
-        if (
-          testBodyLambda.params.length < 1 ||
-          !t.isObjectPattern(testBodyLambda.params[0])
-        ) {
-          // First argument to test isn't an object?
-          return;
-        }
-
-        const mountProperty = testBodyLambda.params[0].properties.find(
-          (property) =>
-            t.isObjectProperty(property) &&
-            t.isIdentifier(property.key) &&
-            property.key.name === "mount",
-        );
-
-        if (!mountProperty) {
-          // We don't use mount in this test
-          return;
-        }
-
-        // Find mount usage
-        // TODO: Traverse deep references (passed to functions)
-        testBodyLambdaPath.traverse({
-          CallExpression(mountCallPath) {
-            if (!t.isMemberExpression(mountCallPath.node.callee) || !t.isIdentifier(mountCallPath.node.callee.object) || mountCallPath.node.callee.object.name !== "mount" || !t.isIdentifier(mountCallPath.node.callee.property)) {
-              return;
-            }
-            const framework = mountCallPath.node.callee.property.name;
-
-            const mountLambdaIndex = mountCallPath.node.arguments.findIndex(
-              (arg) => t.isArrowFunctionExpression(arg),
-            );
-
-            if (mountLambdaIndex === -1) {
-              // Broken mount
-              return;
-            }
-
-            const mountLambdaPath = mountCallPath.get(
-              `arguments.${mountLambdaIndex}`,
-            ) as NodePath<t.ArrowFunctionExpression>;
-
-            const dependencies = getLambdaDependencies(
-              mountLambdaPath,
-              testBodyLambdaPath.scope,
-              importBindings,
-            );
-
-            mountDependencies.set(mountLambdaPath, { dependencies, framework });
-          },
-        });
-      },
+        detectTestMount(path);
+        detectRequire(path);
+      }
     },
   };
 });
+
+const detectTestMount = (path: NodePath<t.CallExpression>) => {
+  // TODO: Detect this more accurately
+  let rootNode = path.node.callee;
+
+  if (t.isMemberExpression(rootNode)) {
+    rootNode = rootNode.object;
+  }
+
+  // Detect test() and test.*()
+  if (
+    !t.isIdentifier(rootNode) ||
+    rootNode.name !== "test"
+  ) {
+    return;
+  }
+
+  const testBodyLambdaIndex = path.node.arguments.findIndex((arg) =>
+    t.isArrowFunctionExpression(arg),
+  );
+
+  if (testBodyLambdaIndex === -1) {
+    return;
+  }
+
+  const testBodyLambdaPath = path.get(
+    `arguments.${testBodyLambdaIndex}`,
+  ) as NodePath<t.ArrowFunctionExpression>;
+
+  // const testBodyLambda = path.node.arguments[
+  //   testBodyLambdaIndex
+  // ] as t.ArrowFunctionExpression;
+  const testBodyLambda = testBodyLambdaPath.node;
+
+  if (
+    testBodyLambda.params.length < 1 ||
+    !t.isObjectPattern(testBodyLambda.params[0])
+  ) {
+    // First argument to test isn't an object?
+    return;
+  }
+
+  const mountProperty = testBodyLambda.params[0].properties.find(
+    (property) =>
+      t.isObjectProperty(property) &&
+      t.isIdentifier(property.key) &&
+      property.key.name === "mount",
+  );
+
+  if (!mountProperty) {
+    // We don't use mount in this test
+    return;
+  }
+
+  // Find mount usage
+  // TODO: Traverse deep references (passed to functions)
+  testBodyLambdaPath.traverse({
+    CallExpression(mountCallPath) {
+      if (!t.isMemberExpression(mountCallPath.node.callee) || !t.isIdentifier(mountCallPath.node.callee.object) || mountCallPath.node.callee.object.name !== "mount" || !t.isIdentifier(mountCallPath.node.callee.property)) {
+        return;
+      }
+      const framework = mountCallPath.node.callee.property.name;
+
+      const mountLambdaIndex = mountCallPath.node.arguments.findIndex(
+        (arg) => t.isArrowFunctionExpression(arg),
+      );
+
+      if (mountLambdaIndex === -1) {
+        // Broken mount
+        return;
+      }
+
+      const mountLambdaPath = mountCallPath.get(
+        `arguments.${mountLambdaIndex}`,
+      ) as NodePath<t.ArrowFunctionExpression>;
+
+      const dependencies = getLambdaDependencies(
+        mountLambdaPath,
+        testBodyLambdaPath.scope,
+        importBindings,
+        requireBindings,
+      );
+
+      mountDependencies.set(mountLambdaPath, { dependencies, framework });
+    },
+  });
+}
+
+const detectRequire = (path: NodePath<t.CallExpression>) => {
+  if (!t.isIdentifier(path.node.callee, { name: "require" })) {
+    return;
+  }
+
+  const parentPath = path.parentPath;
+
+  const specifierNames: string[] = [];
+
+  if (t.isVariableDeclarator(parentPath.node)) {
+    if (t.isIdentifier(parentPath.node.id)) {
+      // const foo = require('bar')
+      specifierNames.push(parentPath.node.id.name);
+    } else if (t.isObjectPattern(parentPath.node.id)) {
+      // const { foo } = require('bar')
+      specifierNames.push(...getObjectPropertyValues(parentPath.node.id));
+    }
+  } else if (t.isAssignmentExpression(parentPath.node)) {
+    if (t.isIdentifier(parentPath.node.left)) {
+      // foo = require('bar')
+      specifierNames.push(parentPath.node.left.name);
+    } else if (t.isObjectPattern(parentPath.node.left)) {
+      // { foo } = require('bar')
+      specifierNames.push(...getObjectPropertyValues(parentPath.node.left));
+    }
+  } else {
+    // require('bar')
+    // Side effect. I don't think we care
+    return;
+  }
+
+  for (const specifier of specifierNames) {
+    const binding = path.scope.getBinding(specifier);
+
+    if (!binding) {
+      throw new Error(`No binding for import "${specifier}"`);
+    }
+  
+    requireBindings.set(binding, path);  
+  }
+}
 
 export type ImportInfo = {
   id: string;

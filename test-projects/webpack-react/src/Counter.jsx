@@ -12,3 +12,5 @@ export const Counter = ({ initial }) => {
     </div>
   );
 }
+
+export const AdditionalCounter = () => <div>AdditionalCounter</div>;
