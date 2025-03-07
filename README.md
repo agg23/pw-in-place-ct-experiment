@@ -13,7 +13,7 @@ Rewrites component testing to use the user's configuration and dev server, rathe
 ## Disadvantages
 
 * Babel transforms aren't simple. Maybe too much magic
-* Attaching to Webpack is much more complicated than Vite
+* Attaching to Webpack is much more complicated than Vite (current implementation is styled off of how Cypress does it, which is more complicated than I'd like)
 
 ## Known issues
 
@@ -23,7 +23,11 @@ Rewrites component testing to use the user's configuration and dev server, rathe
 ## Questions
 
 * Do we use lambdas as arguments to mount or do we keep as is in PW? Lambdas were chosen to more clearly represent scope (and technically make the Babel transform easier)
+* Why don't we throw explicit errors on passing context to `evaluate`/`mount` that doesn't work? Why don't we limit this in scope more so it's more clear to the user what is happening?
 
 ## TODO
 
 * Errors need to be sent back from the browser in a more obvious way
+* Import/require handling needs to be fleshed out more; I don't think rest parameters currently work
+* Implement hooks and `update`
+* 
