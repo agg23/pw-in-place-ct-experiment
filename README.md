@@ -30,4 +30,3 @@ Rewrites component testing to use the user's configuration and dev server, rathe
 * Errors need to be sent back from the browser in a more obvious way
 * Import/require handling needs to be fleshed out more; I don't think rest parameters currently work
 * Implement hooks and `update`
-* 

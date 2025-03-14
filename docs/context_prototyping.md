@@ -177,3 +177,27 @@ test('some test', async () => {
   console.log(await $localComplexVariable.value);
 });
 ```
+
+
+### Builder
+
+```ts
+interface MountContext<T extends any[]> {
+  add: <S>(value: S) => MountContext<[...T, S]>;
+  mount: <R>(fn: () => R) => {
+    values: T;
+  } & (R extends void ? {} : { result: R });
+}
+
+const something = 'something';
+const someNumber = 42;
+
+const mountContext = ({} as MountContext<[]>).add(something).add(someNumber);
+
+const { values: [somethingBrowser, someNumberBrowser ]} = mountContext.mount(() => {
+  console.log(something);
+  console.log(someNumber);
+  // This is not declared, will error on the Babel side
+  console.log(another);
+});
+```
