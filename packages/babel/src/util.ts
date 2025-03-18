@@ -45,7 +45,7 @@ export const getLambdaDependencies = (
       } else if (t.isImportNamespaceSpecifier(matchingSpecifier)) {
         type = "namespace";
       }
-  
+
       dependencies[identifier] = {
         url: importDeclaration.node.source.value,
         type,
@@ -117,3 +117,46 @@ const getRequireDependencyInfo = (path: NodePath<t.CallExpression>) => {
 export const getObjectPropertyValues = (objectPattern: t.ObjectPattern) => objectPattern.properties
   .filter((property) => t.isObjectProperty(property) && t.isIdentifier(property.value))
   .map((property) => ((property as t.ObjectProperty).value as t.Identifier).name);
+
+export const getVariableDeclarator = (path: NodePath<t.Node>): t.LVal | undefined => {
+  // TODO: Descructuring is collapsing nested destructuring. We need to handle that
+  // TODO: Handle array destructuring
+  if (t.isAwaitExpression(path.node)) {
+    return !!path.parentPath ? getVariableDeclarator(path.parentPath) : undefined;
+  } else if (t.isVariableDeclarator(path.node)) {
+    return path.node.id;
+    // if (t.isIdentifier(path.node.id)) {
+    //   // const foo = require('bar')
+    //   return { type: "single", identifier: path.node.id.name };
+    // } else if (t.isObjectPattern(path.node.id)) {
+    //   // const { foo } = require('bar')
+    //   return { type: "destructuring", identifiers: getObjectPropertyValues(path.node.id) };
+    // }
+  } else if (t.isAssignmentExpression(path.node)) {
+    return path.node.left as t.LVal;
+    // if (t.isIdentifier(path.node.left)) {
+    //   // foo = require('bar')
+    //   return { type: "single", identifier: path.node.left.name };
+    // } else if (t.isObjectPattern(path.node.left)) {
+    //   // { foo } = require('bar')
+    //   return { type: "destructuring", identifiers: getObjectPropertyValues(path.node.left) };
+    // }
+  }
+
+  // require('bar')
+  // Side effect. I don't think we care
+  return undefined;
+}
+
+export const collapseVariableIdentifiers = (declaration: t.LVal): string[] => {
+  if (t.isIdentifier(declaration)) {
+    // const foo = require('bar')
+    return [declaration.name];
+  } else if (t.isObjectPattern(declaration)) {
+    // const { foo } = require('bar')
+    // This flattens all destructuring
+    return getObjectPropertyValues(declaration);
+  }
+
+  return [];
+}

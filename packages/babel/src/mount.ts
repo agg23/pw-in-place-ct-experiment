@@ -89,3 +89,67 @@ export const detectTestMount = (path: NodePath<t.CallExpression>) => {
     },
   });
 }
+
+export const rewriteMounts = (workingDirectory: string) => {
+  for (const [
+    mountLambda,
+    { dependencies, framework },
+  ] of state.mountDependencies.entries()) {
+    // Rewrite mount call
+    const mount = mountLambda.parent as t.CallExpression;
+    if (t.isV8IntrinsicIdentifier(mount.callee)) {
+      continue;
+    }
+
+    let memberObject = mount.callee;
+    if (t.isMemberExpression(mount.callee)) {
+      memberObject = mount.callee.object;
+    }
+    mount.callee = t.memberExpression(
+      memberObject,
+      t.identifier("_mountInternal"),
+    );
+
+    const imports = t.objectExpression(
+      Object.entries(dependencies).map(([identifier, dependency]) => {
+        return t.objectProperty(
+          t.identifier(identifier),
+          t.objectExpression([
+            t.objectProperty(
+              t.identifier("url"),
+              t.stringLiteral(dependency.url),
+            ),
+            t.objectProperty(
+              t.identifier("type"),
+              t.stringLiteral(dependency.type),
+            ),
+            t.objectProperty(
+              t.identifier("form"),
+              t.stringLiteral(dependency.form),
+            ),
+          ]),
+        );
+      }),
+    );
+    mount.arguments.push(imports);
+    mount.arguments.push(
+      t.stringLiteral(workingDirectory),
+      // t.memberExpression(
+      //   t.metaProperty(t.identifier("import"), t.identifier("meta")),
+      //   t.identifier("dirname"),
+      // ),
+    );
+    mount.arguments.push(t.stringLiteral(framework));
+
+    // Rewrite mount lambda arguments (destructure all of them)
+    const properties = Object.entries(dependencies).map(
+      ([identifier, _dependency]) =>
+        t.objectProperty(
+          t.identifier(identifier),
+          t.identifier(identifier),
+        ),
+    );
+
+    mountLambda.node.params = [t.objectPattern(properties)];
+  }
+}

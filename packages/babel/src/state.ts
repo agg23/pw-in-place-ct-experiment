@@ -13,9 +13,14 @@ export const state: {
       dependencies: Record<string, Dependency>,
       framework: string,
     }
+  >,
+  browserCalls: Map<
+    NodePath<t.CallExpression>,
+    t.LVal
   >
 } = {
   importBindings: new Map(),
   requireBindings: new Map(),
   mountDependencies: new Map(),
+  browserCalls: new Map(),
 };
