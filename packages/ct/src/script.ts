@@ -114,7 +114,7 @@ const buildIncludes = (imports: Record<string, Dependency>, workingDir: string) 
   return { importExpressions, requireExpressions, componentArguments };
 }
 
-export const buildUserContentScript = async <T extends CTFramework>(componentBuilder: MountFixture[T], imports: Record<string, Dependency>, workingDir: string, framework: T) => {
+export const buildUserContentScript = async <T extends CTFramework>(componentBuilder: MountFixture[T], imports: Record<string, Dependency>, variablesInContext: Array<{id: string, name: string}>, workingDir: string, framework: T) => {
   const { importExpressions, requireExpressions, componentArguments } = buildIncludes(imports, workingDir);
 
   const allImports = importExpressions.join('\n');
@@ -122,14 +122,19 @@ export const buildUserContentScript = async <T extends CTFramework>(componentBui
   const allIncludes = `${allImports}\n${allRequires}`;
   const componentInstantiation = `(${componentBuilder.toString()})({${componentArguments.join(', ')}})`;
 
+  const allVariables = buildVariableExpressions(variablesInContext);
+
   switch (framework) {
     case 'react':
-      return generateReact(allIncludes, componentInstantiation);
+      return generateReact(allIncludes, allVariables, componentInstantiation);
     case 'vue':
-      return generateVue(allIncludes, componentInstantiation);
+      return generateVue(allIncludes, allVariables, componentInstantiation);
     case 'svelte':
-      return generateSvelte(allIncludes, componentInstantiation);
+      return generateSvelte(allIncludes, allVariables, componentInstantiation);
     default:
       throw new Error(`Unknown framework: ${framework}`);
   }
 }
+
+const buildVariableExpressions = (variablesInContext: Array<{id: string, name: string}>) => variablesInContext.map(({ id, name }) =>
+  `const ${name} = window.__PW_BROWSER_VARIABLE_REGISTRY.get('${id}');`).join('\n');

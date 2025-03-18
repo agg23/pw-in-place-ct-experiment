@@ -119,7 +119,7 @@ export const getObjectPropertyValues = (objectPattern: t.ObjectPattern) => objec
   .map((property) => ((property as t.ObjectProperty).value as t.Identifier).name);
 
 export const getVariableDeclarator = (path: NodePath<t.Node>): t.LVal | undefined => {
-  // TODO: Descructuring is collapsing nested destructuring. We need to handle that
+  // TODO: Destructuring is collapsing nested destructuring. We need to handle that
   // TODO: Handle array destructuring
   if (t.isAwaitExpression(path.node)) {
     return !!path.parentPath ? getVariableDeclarator(path.parentPath) : undefined;

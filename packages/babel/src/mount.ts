@@ -2,6 +2,7 @@ import * as t from "@babel/types";
 import type { NodePath } from "@babel/traverse";
 import { getLambdaDependencies } from "./util";
 import { state } from "./state";
+import { rewriteBrowserVariableUsageInMount } from "./browserVariable";
 
 export const detectTestMount = (path: NodePath<t.CallExpression>) => {
   // TODO: Detect this more accurately
@@ -151,5 +152,7 @@ export const rewriteMounts = (workingDirectory: string) => {
     );
 
     mountLambda.node.params = [t.objectPattern(properties)];
+
+    rewriteBrowserVariableUsageInMount(mountLambda);
   }
 }

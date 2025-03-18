@@ -12,7 +12,7 @@ const indexHTML = `
     <div id="ct-root"></div>
     <script type="module">
       import entrypoint from '/@id/${VIRTUAL_ENTRYPOINT_PATH}';
-      entrypoint();
+      window.__PW_ENTRYPOINT = entrypoint;
     </script>
   </body>
 </html>

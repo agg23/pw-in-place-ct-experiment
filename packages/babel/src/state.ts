@@ -14,13 +14,17 @@ export const state: {
       framework: string,
     }
   >,
-  browserCalls: Map<
-    NodePath<t.CallExpression>,
-    t.LVal
+  // Binding is to the assigned variable name
+  browserBindings: Map<
+    Binding,
+    {
+      declaration: t.Identifier,
+      callSite: NodePath<t.CallExpression>,
+    }
   >
 } = {
   importBindings: new Map(),
   requireBindings: new Map(),
   mountDependencies: new Map(),
-  browserCalls: new Map(),
+  browserBindings: new Map(),
 };

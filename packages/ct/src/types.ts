@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { createApp } from 'vue';
 import type { mount } from 'svelte'
+import { JSHandle } from '@playwright/test';
 
 export type Dependency = {
   url: string;
@@ -32,6 +33,20 @@ export interface VirtualModuleRequest {
 
 export type CTFramework = 'react' | 'vue' | 'svelte';
 
+// TODO: Find a better name
+// export interface BrowserVariable<T> {
+//   id: string;
+//   handle: JSHandle<T>;
+// }
+
+export interface Fixture {
+  mount: MountFixture;
+  $browser: <T>(value: T) => Promise<BrowserVariable<T>>;
+
+  ctRootDir: string;
+  ctPort: number
+}
+
 type VueCreateParams = Parameters<typeof createApp>;
 interface VueCreateObject {
   component: VueCreateParams[0];
@@ -49,4 +64,25 @@ export interface MountFixture {
   react: (componentBuilder: () => ReactNode) => Promise<void>;
   vue: (componentBuilder: () => VueCreateObject) => Promise<void>;
   svelte: (componentBuilder: () => SvelteMountObject) => Promise<void>;
+}
+
+type Handle<T> = JSHandle<{ value: T }>;
+
+// TODO: Find a better name
+export class BrowserVariable<T> {
+  handle: Handle<T> | undefined = undefined;
+
+  constructor(public id: string) {}
+
+  registerHandle(handle: Handle<T>) {
+    this.handle = handle;
+  }
+
+  async get() {
+    if (!this.handle) {
+      throw new Error('Cannot get a browser variable that has not been initialized');
+    }
+
+    return this.handle;
+  }
 }
