@@ -31,7 +31,15 @@ export const pwPlugin = (): Plugin => {
     },
     configureServer: async (server) => {
       server.middlewares.use(async (req, res, next) => {
-        if (req.url === `/${VIRTUAL_ENTRYPOINT_NAME}` && req.method === 'POST') {
+        // Intercept index.html requests rather than using transformIndexHtml, as it isn't called 
+        // if it can't find index.html on the fs
+        if (req.url === '/') {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'text/html');
+          res.end(indexHTML);
+
+          return;
+        } else if (req.url === `/${VIRTUAL_ENTRYPOINT_NAME}` && req.method === 'POST') {
           try {
             const body = await getRawBody(req);
             const jsonBody = JSON.parse(body) as { body: string };
@@ -70,8 +78,7 @@ export const pwPlugin = (): Plugin => {
       if (id === VIRTUAL_ENTRYPOINT_PATH) {
         return virtualEntrypoint;
       }
-    },
-    transformIndexHtml: () => indexHTML,
+    }
   };
 };
 
