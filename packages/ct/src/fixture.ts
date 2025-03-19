@@ -18,7 +18,7 @@ interface InternalFixture {
 interface RegisteredVariable<T> {
   variable: BrowserVariable<T>;
   name: string;
-  value: T;
+  initialValue: T;
 }
 
 // TODO: Remove from public scope
@@ -26,7 +26,7 @@ export const test = base.extend<Fixture & InternalFixture>({
   // These values are validated in `defineConfig`
   ctRootDir: ['./', { option: true }],
   ctPort: [3100, { option: true }],
-  _didMount: { value: false },
+  _didMount: ({}, use) => use({ value: false }),
   _browserVariableRegistry: async ({}, use) => use(new Map()),
   mount: async ({ page, ctRootDir: rootProjectDir, ctPort, _didMount, _browserVariableRegistry }, use) => {
     const sharedReject = async () => {
@@ -67,11 +67,11 @@ export const test = base.extend<Fixture & InternalFixture>({
       await page.goto(`http://localhost:${ctPort}`);
 
       // Now that we've loaded the page, register the variables
-      for (const [id, { value, name, variable }] of _browserVariableRegistry.entries()) {
+      for (const [id, { initialValue, name, variable }] of _browserVariableRegistry.entries()) {
         // TODO: All variables are re-registered on every mount
         if (!variable.handle) {
           // Variable hasn't been registered in browser context
-          const handle = await insertBrowserVariable(page, id, name, value);
+          const handle = await insertBrowserVariable(page, id, name, initialValue);
           variable.registerHandle(handle);  
         }
       }
@@ -91,10 +91,10 @@ export const test = base.extend<Fixture & InternalFixture>({
       throw new Error('Attempted to call `$browser` directly. This should be transformed by the Babel plugin');
     };
 
-    $browser._internal = async <T>(value: T, id: string, name: string): Promise<BrowserVariable<T>> => {
+    $browser._internal = async <T>(initialValue: T, id: string, name: string): Promise<BrowserVariable<T>> => {
       const variable = new BrowserVariable<T>(id);
 
-      _browserVariableRegistry.set(id, { variable, name, value });
+      _browserVariableRegistry.set(id, { variable, name, initialValue });
 
       console.log("Registering variable", name);
 
@@ -103,7 +103,7 @@ export const test = base.extend<Fixture & InternalFixture>({
         return variable;
       }
 
-      const handle = await insertBrowserVariable(page, id, name, value);
+      const handle = await insertBrowserVariable(page, id, name, initialValue);
       variable.registerHandle(handle);
       
       return variable;  

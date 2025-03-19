@@ -78,11 +78,22 @@ export class BrowserVariable<T> {
     this.handle = handle;
   }
 
-  async get() {
+  async get(): Promise<T> {
     if (!this.handle) {
       throw new Error('Cannot get a browser variable that has not been initialized');
     }
 
-    return this.handle;
+    const wrapper = await this.handle.jsonValue();
+    return wrapper.value;
+  }
+
+  async set(value: T): Promise<void> {
+    if (!this.handle) {
+      throw new Error('Cannot set a browser variable that has not been initialized');
+    }
+
+    await this.handle.evaluate((variable, value) => {
+      variable.value = value as T;
+    }, value);
   }
 }
