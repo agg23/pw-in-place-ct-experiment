@@ -41,3 +41,28 @@ test('should mutate primitives in node', async ({ page, mount, $browser }) => {
 
   expect(await aVariable.get()).toBe(444);
 });
+
+test('should mutate objects in browser', async ({ page, mount, $browser }) => {
+  const aVariable = await $browser({ a: 123 });
+
+  await mount.react(() => {
+    aVariable.a += 123;
+    aVariable.b = "hello";
+    return null;
+  });
+
+  expect(await aVariable.get()).toEqual({ a: 246, b: "hello" });
+});
+
+test('should mutate objects in node', async ({ page, mount, $browser }) => {
+  const aVariable = await $browser({ a: 123 });
+
+  await mount.react(() => {
+    aVariable.a += 123;
+    return null;
+  });
+
+  await aVariable.set({ a: 444, b: "hello" });
+
+  expect(await aVariable.get()).toEqual({ a: 444, b: "hello" });
+});
