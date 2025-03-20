@@ -1,8 +1,9 @@
 import { test as base, Page } from '@playwright/test';
 import * as path from 'path';
 import { buildUserContentScript } from './script';
-import { BrowserSpy, BrowserVariable, CTFramework, Dependency, Fixture, MountFixture } from './types';
+import {  CTFramework, Dependency, Fixture, MountFixture } from './types';
 import { VIRTUAL_ENTRYPOINT_NAME } from './virtual';
+import { BrowserSpy, BrowserVariable } from './variable';
 
 declare global {
   interface Window {
@@ -181,7 +182,7 @@ const value = ${fn.toString()};
 const name = '${name}';
 const id = '${id}';
 
-const variableObject = new _PW_BrowserSpy(id, name, value);
+const variableObject = new window.__PW_BrowserSpy(id, name, value);
 
 window.__PW_BROWSER_VARIABLE_REGISTRY.set(id, variableObject);
 

@@ -2,6 +2,7 @@ import { defineConfig as baseDefineConfig } from "pw-ct-babel";
 import { type PlaywrightTestConfig as BasePlaywrightTestConfig } from "@playwright/test";
 
 export { test } from "./fixture";
+export { expect } from "./expect";
 
 export type PlaywrightTestConfig<T = {}, W = {}> = Omit<BasePlaywrightTestConfig<T, W>, 'use'> & {
   use: BasePlaywrightTestConfig<T, W>['use'] & {

@@ -78,6 +78,10 @@ const buildIncludes = (imports: Record<string, Dependency>, workingDir: string) 
 
     return importExpressions;
   });
+
+  // TODO: This might only work in ESM
+  // Let the bundler transpile this rather than our package build
+  importExpressions.push(`import '${path.resolve(__dirname, '../browser/spy.js')}';`);
   
   const requireExpressions = [...dedupedRequires.entries()].flatMap(([url, requireData]) => {
     let requirePath = url;

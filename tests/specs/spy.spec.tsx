@@ -1,5 +1,5 @@
-import { test } from "pw-ct";
-import { expect } from '@playwright/test';
+import { test, expect } from "pw-ct";
+import { stripVTControlCharacters } from "util";
 
 test('should record basic call on spy', async ({ page, mount, $browserSpy }) => {
   const aFunctionSpy = await $browserSpy(() => console.log("hello world. This is in browser"));
@@ -12,7 +12,19 @@ test('should record basic call on spy', async ({ page, mount, $browserSpy }) => 
 
   expect(await aFunctionSpy.calls()).toEqual([[ expect.objectContaining({}) ]]);
 
-  // await page.waitForTimeout(5000);
+  await expect(aFunctionSpy).toHaveBeenCalled();
+});
 
-  // expect(await aFunctionSpy.get()).toHaveBeenCalled();
+test('should properly error when spy not called with toHaveBeenCalled', async ({ page, mount, $browserSpy }) => {
+  const aFunctionSpy = await $browserSpy(() => console.log("hello world. This is in browser"));
+
+  await mount.react(() => {
+    return <button onClick={aFunctionSpy}>Hi</button>;
+  });
+
+  try {
+    await expect(aFunctionSpy).toHaveBeenCalled();
+  } catch (e) {
+    expect(stripVTControlCharacters(e.matcherResult.message)).toContain("Expected number of calls: >= 1")
+  }
 });

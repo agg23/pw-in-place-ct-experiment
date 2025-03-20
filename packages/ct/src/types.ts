@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { createApp } from 'vue';
 import type { mount } from 'svelte'
-import { JSHandle } from '@playwright/test';
+import { BrowserSpy, BrowserVariable } from './variable';
 
 export type Dependency = {
   url: string;
@@ -65,54 +65,4 @@ export interface MountFixture {
   react: (componentBuilder: () => ReactNode) => Promise<void>;
   vue: (componentBuilder: () => VueCreateObject) => Promise<void>;
   svelte: (componentBuilder: () => SvelteMountObject) => Promise<void>;
-}
-
-type Handle<T> = JSHandle<{ value: T }>;
-
-// TODO: Find a better name
-export class BrowserVariable<T> {
-  handle: Handle<T> | undefined = undefined;
-
-  constructor(public id: string) {}
-
-  registerHandle(handle: Handle<T>) {
-    this.handle = handle;
-  }
-
-  async get(): Promise<T> {
-    if (!this.handle) {
-      throw new Error('Cannot get a browser variable that has not been initialized');
-    }
-
-    const wrapper = await this.handle.jsonValue();
-    return wrapper.value;
-  }
-
-  async set(value: T): Promise<void> {
-    if (!this.handle) {
-      throw new Error('Cannot set a browser variable that has not been initialized');
-    }
-
-    await this.handle.evaluate((variable, value) => {
-      variable.value = value as T;
-    }, value);
-  }
-}
-
-export class BrowserSpy<T extends () => {}> {
-  handle: Handle<T> | undefined = undefined;
-
-  constructor(public id: string) {}
-
-  registerHandle(handle: Handle<T>) {
-    this.handle = handle;
-  }
-
-  async calls(): Promise<Array<Parameters<T>>> {
-    if (!this.handle) {
-      throw new Error('Cannot get a browser spy that has not been initialized');
-    }
-
-    return this.handle.evaluate(spy => spy.value) as unknown as Array<Parameters<T>>;
-  }
 }
