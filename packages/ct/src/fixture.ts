@@ -1,7 +1,7 @@
 import { test as base, Page } from '@playwright/test';
 import * as path from 'path';
 import { buildUserContentScript } from './script';
-import { BrowserVariable, CTFramework, Dependency, Fixture, MountFixture } from './types';
+import { BrowserSpy, BrowserVariable, CTFramework, Dependency, Fixture, MountFixture } from './types';
 import { VIRTUAL_ENTRYPOINT_NAME } from './virtual';
 
 declare global {
@@ -11,12 +11,13 @@ declare global {
 }
 
 interface InternalFixture {
-  _browserVariableRegistry: Map<string, RegisteredVariable<unknown>>;
+  _browserVariableRegistry: Map<string, RegisteredVariable<unknown, BrowserVariable<unknown>>>;
+  _browserSpyRegistry: Map<string, RegisteredVariable<() => {}, BrowserSpy<() => {}>>>;
   _didMount: { value: boolean };
 }
 
-interface RegisteredVariable<T> {
-  variable: BrowserVariable<T>;
+interface RegisteredVariable<T, Base> {
+  variable: Base;
   name: string;
   initialValue: T;
 }
@@ -28,7 +29,8 @@ export const test = base.extend<Fixture & InternalFixture>({
   ctPort: [3100, { option: true }],
   _didMount: ({}, use) => use({ value: false }),
   _browserVariableRegistry: async ({}, use) => use(new Map()),
-  mount: async ({ page, ctRootDir: rootProjectDir, ctPort, _didMount, _browserVariableRegistry }, use) => {
+  _browserSpyRegistry: async ({}, use) => use(new Map()),
+  mount: async ({ page, ctRootDir: rootProjectDir, ctPort, _didMount, _browserVariableRegistry, _browserSpyRegistry }, use) => {
     const sharedReject = async () => {
       throw new Error('Attempted to call `mount` directly. This should be transformed by the Babel plugin');
     };
@@ -47,7 +49,7 @@ export const test = base.extend<Fixture & InternalFixture>({
     (mountFixture as any)._mountInternal = async <T extends CTFramework>(componentBuilder: MountFixture[T], imports: Record<string, Dependency>, workingDir: string, framework: CTFramework) => {
       const scriptWorkingRelativeDir = path.relative(rootProjectDir, workingDir);
 
-      let variablesInContext: Array<{id: string, name: string}> = [..._browserVariableRegistry.entries()].map(([id, { name }]) => ({ id, name }));
+      const variablesInContext: Array<{id: string, name: string}> = [..._browserVariableRegistry.entries(), ..._browserSpyRegistry.entries()].map(([id, { name }]) => ({ id, name }));
 
       const script = await buildUserContentScript(componentBuilder, imports, variablesInContext, scriptWorkingRelativeDir, framework);
       try {
@@ -71,14 +73,35 @@ export const test = base.extend<Fixture & InternalFixture>({
         // TODO: All variables are re-registered on every mount
         if (!variable.handle) {
           // Variable hasn't been registered in browser context
-          const handle = await insertBrowserVariable(page, id, name, initialValue);
-          variable.registerHandle(handle);  
+          try {
+            const handle = await insertBrowserVariable(page, id, name, initialValue);
+            variable.registerHandle(handle);    
+          } catch (e) {
+            console.error(`Failed to register browser variable ${name}`, e);
+          }
+        }
+      }
+
+      for (const [id, { initialValue, name, variable }] of _browserSpyRegistry.entries()) {
+        // TODO: All variables are re-registered on every mount
+        if (!variable.handle) {
+          // Variable hasn't been registered in browser context
+          try {
+            const handle = await insertBrowserSpy(page, id, name, initialValue);
+            variable.registerHandle(handle);    
+          } catch (e) {
+            console.error(`Failed to register browser spy ${name}`, e);
+          }
         }
       }
 
       // Execute component builder
-      // @ts-expect-error
-      await page.evaluate(() => window.__PW_ENTRYPOINT());
+      try {
+        // @ts-expect-error
+        await page.evaluate(() => window.__PW_ENTRYPOINT());
+      } catch (e) {
+        throw new Error("Error starting component in the browser. Check the test code for errors.");
+      }
 
       _didMount.value = true;
     };
@@ -109,6 +132,30 @@ export const test = base.extend<Fixture & InternalFixture>({
       return variable;  
     };
     await use($browser);
+  },
+  $browserSpy: async ({ page, _didMount, _browserSpyRegistry }, use) => {
+    const $browserSpy = async () => {
+      throw new Error('Attempted to call `$browserSpy` directly. This should be transformed by the Babel plugin');
+    };
+
+    $browserSpy._internal = async <T extends () => {}>(fn: T, id: string, name: string): Promise<BrowserSpy<T>> => {
+      const variable = new BrowserSpy<T>(id);
+
+      _browserSpyRegistry.set(id, { variable, name, initialValue: fn });
+
+      console.log("Registering spy", name);
+
+      if (!_didMount.value) {
+        // This variable is pending (no handle)
+        return variable;
+      }
+
+      const handle = await insertBrowserSpy(page, id, name, fn);
+      variable.registerHandle(handle);
+      
+      return variable;  
+    };
+    await use($browserSpy);
   }
 });
 
@@ -123,3 +170,20 @@ const insertBrowserVariable = async <T>(page: Page, id: string, name: string, va
 
   return variableObject as { value: T };
 }, { id, name, value });
+
+const insertBrowserSpy = async <T extends Function>(page: Page, id: string, name: string, fn: T) => page.evaluateHandle<{ value: T }>(
+`
+if (!window.__PW_BROWSER_VARIABLE_REGISTRY) {
+  window.__PW_BROWSER_VARIABLE_REGISTRY = new Map();
+}
+
+const value = ${fn.toString()};
+const name = '${name}';
+const id = '${id}';
+
+const variableObject = new _PW_BrowserSpy(id, name, value);
+
+window.__PW_BROWSER_VARIABLE_REGISTRY.set(id, variableObject);
+
+variableObject
+`);

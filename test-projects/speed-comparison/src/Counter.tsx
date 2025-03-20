@@ -6,8 +6,8 @@ export const Counter: React.FC<{ initial?: number }> = ({ initial }) => {
   return (
     <div>
       <div data-testid="count">{count}</div>
-      <button onClick={() => setCount(count + 1)}>Increment</button>
-      <button onClick={() => setCount(count - 1)}>Decrement</button>
+      <button onClick={() => setCount(count => count + 1)}>Increment</button>
+      <button onClick={() => setCount(count => count - 1)}>Decrement</button>
     </div>
   );
 }

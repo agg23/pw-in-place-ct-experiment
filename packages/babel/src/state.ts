@@ -21,10 +21,18 @@ export const state: {
       declaration: t.Identifier,
       callSite: NodePath<t.CallExpression>,
     }
+  >,
+  browserSpyBindings: Map<
+    Binding,
+    {
+      declaration: t.Identifier,
+      callSite: NodePath<t.CallExpression>,
+    }
   >
 } = {
   importBindings: new Map(),
   requireBindings: new Map(),
   mountDependencies: new Map(),
   browserBindings: new Map(),
+  browserSpyBindings: new Map(),
 };

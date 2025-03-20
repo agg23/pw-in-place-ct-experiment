@@ -42,6 +42,7 @@ export type CTFramework = 'react' | 'vue' | 'svelte';
 export interface Fixture {
   mount: MountFixture;
   $browser: <T>(value: T) => Promise<BrowserVariable<T>>;
+  $browserSpy: <T extends () => {}>(value: T) => Promise<BrowserSpy<T>>;
 
   ctRootDir: string;
   ctPort: number
@@ -95,5 +96,23 @@ export class BrowserVariable<T> {
     await this.handle.evaluate((variable, value) => {
       variable.value = value as T;
     }, value);
+  }
+}
+
+export class BrowserSpy<T extends () => {}> {
+  handle: Handle<T> | undefined = undefined;
+
+  constructor(public id: string) {}
+
+  registerHandle(handle: Handle<T>) {
+    this.handle = handle;
+  }
+
+  async calls(): Promise<Array<Parameters<T>>> {
+    if (!this.handle) {
+      throw new Error('Cannot get a browser spy that has not been initialized');
+    }
+
+    return this.handle.evaluate(spy => spy.value) as unknown as Array<Parameters<T>>;
   }
 }

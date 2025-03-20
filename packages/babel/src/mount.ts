@@ -153,6 +153,7 @@ export const rewriteMounts = (workingDirectory: string) => {
 
     mountLambda.node.params = [t.objectPattern(properties)];
 
-    rewriteBrowserVariableUsageInMount(mountLambda);
+    rewriteBrowserVariableUsageInMount(mountLambda, 'value', state.browserBindings);
+    rewriteBrowserVariableUsageInMount(mountLambda, 'call', state.browserSpyBindings);
   }
 }

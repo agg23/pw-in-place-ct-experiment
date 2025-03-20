@@ -59,7 +59,8 @@ export default declare((api) => {
         // Get Playwright mount calls
         detectTestMount(path);
         // Get Playwright $browser calls
-        detectBrowserVariable(path);
+        detectBrowserVariable(path, "$browser", state.browserBindings);
+        detectBrowserVariable(path, "$browserSpy", state.browserSpyBindings);
         // Get require calls
         detectRequire(path);
       }
