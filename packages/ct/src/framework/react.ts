@@ -7,7 +7,7 @@ ${imports}
 export default () => {
   ${localVariables}
   const component = ${componentInstantiation};
-  createRoot(document.getElementById('ct-root')).render(component);
+  createRoot(document.getElementById('ct-root')).render((0, _jsxRuntime.jsx)(component, {}));
 }
 `;
 

@@ -18,6 +18,8 @@
   "peerDependencies": {
     "pw-ct": "*",
     "pw-ct-vite-plugin": "*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "vite": "^6.1.0"
   }
 }

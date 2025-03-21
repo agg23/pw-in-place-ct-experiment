@@ -3,7 +3,7 @@ import { mount } from 'svelte';
 ${imports}
 export default () => {
   ${localVariables}
-  const { component, props } = ${componentInstantiation};
+  const { component, props } = (${componentInstantiation})();
   mount(component, { ...props, target: document.getElementById('ct-root') });
 }
 `;

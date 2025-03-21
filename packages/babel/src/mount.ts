@@ -152,6 +152,8 @@ export const rewriteMounts = (workingDirectory: string) => {
     );
 
     mountLambda.node.params = [t.objectPattern(properties)];
+    // Inner lambda
+    mountLambda.node.body = t.arrowFunctionExpression([], mountLambda.node.body);
 
     rewriteBrowserVariableUsageInMount(mountLambda, 'value', state.browserBindings);
     rewriteBrowserVariableUsageInMount(mountLambda, 'call', state.browserSpyBindings);

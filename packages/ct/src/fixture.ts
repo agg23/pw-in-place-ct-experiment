@@ -101,7 +101,7 @@ export const test = base.extend<Fixture & InternalFixture>({
         // @ts-expect-error
         await page.evaluate(() => window.__PW_ENTRYPOINT());
       } catch (e) {
-        throw new Error("Error starting component in the browser. Check the test code for errors.");
+        throw new Error(`Error starting component in the browser. Check the test code for errors: ${e}`);
       }
 
       _didMount.value = true;
