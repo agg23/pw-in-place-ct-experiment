@@ -1,21 +1,17 @@
-import { expect as baseExpect } from '@playwright/test';
+import { expect as baseExpect, Expect, MatcherReturnType } from '@playwright/test';
 import { BrowserSpy } from './variable';
-
-const JEST_MATCHERS_OBJECT = Symbol.for('$$jest-matchers-object');
 
 const spyIntoJestSpy = <T extends () => {}>(spy: BrowserSpy<T>) => {
   return spy.mock();
 }
 
-const jestMatcher = (name: string) => (globalThis as any)[JEST_MATCHERS_OBJECT].matchers[name];
-
-// export const expect = baseExpect.extend({
-//   toHaveBeenCalled: async (spy: BrowserSpy<any>) => {
-//     console.log('hi');
-//     const matcher = jestMatcher('toHaveBeenCalled');
-//     return matcher.call(baseExpect, await spyIntoJestSpy(spy));
-//   },
-// });
+interface JestSpyMatchers {
+  toBeCalled(spy: BrowserSpy<() => {}>): Promise<MatcherReturnType>;
+  toHaveBeenCalled(spy: BrowserSpy<() => {}>): Promise<MatcherReturnType>;
+  toHaveBeenCalledTimes(spy: BrowserSpy<() => {}>, count: number): Promise<MatcherReturnType>;
+  toHaveBeenCalledWith(spy: BrowserSpy<() => {}>, ...args: any[]): Promise<MatcherReturnType>;
+  toHaveBeenLastCalledWith(spy: BrowserSpy<() => {}>, ...args: any[]): Promise<MatcherReturnType>;
+}
 
 // Jest and Playwright both muck with mutation and global state. Just proxy the object to get something working
 export const expect = new Proxy(baseExpect, {
@@ -24,19 +20,21 @@ export const expect = new Proxy(baseExpect, {
 
     return new Proxy(result, {
       get(target, prop, receiver) {
-        if (prop === 'toHaveBeenCalled') {
-          const [spy] = argumentsList;
+        const [spy] = argumentsList;
 
-          return async () => {
-            // const matcher = jestMatcher('toHaveBeenCalled');
-            // return matcher.call(baseExpect, await spyIntoJestSpy(spy));
-            return (baseExpect(await spyIntoJestSpy(spy)) as any).toHaveBeenCalled();
-          };
+        switch (prop) {
+          case 'toBeCalled':
+          case 'toHaveBeenCalled':
+          case 'toHaveBeenCalledTimes':
+          case 'toHaveBeenCalledWith':
+          case 'toHaveBeenLastCalledWith': {
+            return async () => (baseExpect(await spyIntoJestSpy(spy)) as any)[prop];
+          }
+          default: {
+            return Reflect.get(target, prop, receiver);
+          }
         }
-        return Reflect.get(target, prop, receiver);
       },
     });
   }
-}) as typeof baseExpect & {
-  toHaveBeenCalled: (spy: BrowserSpy<any>) => Promise<void>;
-};
+}) as Expect<JestSpyMatchers>;
